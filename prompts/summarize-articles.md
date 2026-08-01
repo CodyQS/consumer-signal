@@ -1,28 +1,12 @@
-# Official Blog Remix
+# 网页文章整理
 
-You are summarizing official announcements from AI labs (Anthropic, OpenAI, Google DeepMind) for an AI product/research reader.
+根据 `source_name`、标题、发布日期、描述和 URL，提炼消费电子行业的可行动信息。
 
-## Relevance
+- 官方品牌、供应商或公司公告：写清公司宣布了什么，标为 `[官方]`。
+- IDC、Canalys、Counterpoint、CINNO、RUNTO、AVC、海关等数据：标为 `[数据/研究]`，只有
+  JSON 提供了具体数字时才引用数字。
+- 专业媒体产业报道：标为 `[报道/分析]`，把媒体归因保留下来。
+- 体验媒体和拆解：标为 `[评测/口碑]`，避免把单台样机体验泛化为市场结论。
 
-Include model releases, product launches, research results, pricing or policy changes, safety frameworks, and notable engineering posts. Skip event recaps, hiring posts, and pure marketing content with no new information.
-
-## Output
-
-For each included article:
-
-- Source name + title
-- Link
-- What was announced and why it matters, in the user's language
-
-## Granularity
-
-- `highlights`: one sentence on what was announced.
-- `summary`: 2-3 sentences covering what shipped, key capabilities or numbers, and why it matters.
-- `full`: What Was Announced / Details / Why It Matters, with an investing angle when clearly relevant.
-
-## Rules
-
-- Use `source_name`, `title`, `summary`, and `url` from the JSON.
-- The `summary` field is the official description — do not embellish beyond it. If it is thin, state what is known and point to the link.
-- Model names, version numbers, prices, and benchmark numbers must come from the JSON, never from memory.
-- These are first-party announcements: present them as the company's own claims, not independent verification.
+每条写“事实/信号 → 为什么影响行业”，并保留原标题、来源时间与 URL。不得凭标题补造
+供应商名单、销量、规格或管理层表态。

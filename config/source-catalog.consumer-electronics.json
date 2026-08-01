@@ -1,0 +1,790 @@
+{
+  "profile": "consumer_electronics",
+  "version": 1,
+  "policy": {
+    "primary_sources": "公司官方新闻、IR、财报和产品公告用于确认事实",
+    "secondary_sources": "公开行业研究、专业媒体和评测用于需求、供应链与市场判断",
+    "early_signal_sources": "X、播客和人物访谈用于发现研发、备货和市场反馈的早期线索；未经交叉验证时必须标记为线索",
+    "minimum_attribution": "每条入选内容都必须保留原始链接、来源类型和发布时间",
+    "paid_or_login_only_sources": "不绕过付费墙、登录或数据产品许可；仅使用允许公开访问的标题、摘要、新闻稿或经授权的数据接口。",
+    "source_status": "本目录是接入清单，不等于已在每日工作流启用；只有 ingestion.status 以 verified_ 开头的来源已由当前采集器验证。实际运行项以 config/sources.json 为准，适配器类型见各来源的 ingestion.method。"
+  },
+  "source_layers": [
+    {
+      "id": "official_brand_and_component",
+      "name": "一级：品牌、平台与零部件公司的官方信息",
+      "purpose": ["新品研发与发布", "供应商与技术合作", "财报、指引与备货线索", "端侧 AI 与新设备"],
+      "sources": [
+        {
+          "id": "apple_newsroom",
+          "name": "Apple Newsroom",
+          "organization": "Apple",
+          "region": "global",
+          "evidence_class": "primary_disclosure",
+          "topics": ["brand_product_lifecycle", "emerging_device_categories"],
+          "ingestion": {
+            "method": "rss",
+            "url": "https://www.apple.com/ca/newsroom/rss-feed.rss",
+            "status": "verified_with_current_parser"
+          }
+        },
+        {
+          "id": "samsung_global_newsroom",
+          "name": "Samsung Global Newsroom",
+          "organization": "Samsung Electronics",
+          "region": "global",
+          "evidence_class": "primary_disclosure",
+          "topics": ["brand_product_lifecycle", "supply_chain_technology", "emerging_device_categories"],
+          "ingestion": {
+            "method": "rss",
+            "url": "https://news.samsung.com/global/feed",
+            "status": "verified_with_current_parser"
+          },
+          "active_source_id": "samsung_global_newsroom",
+          "notes": "已接入官方全球 Newsroom RSS；共同过滤规则排除企业、网络和泛公司活动。"
+        },
+        {
+          "id": "google_devices_blog",
+          "name": "Google Blog: Devices",
+          "organization": "Google",
+          "region": "global",
+          "evidence_class": "primary_disclosure",
+          "topics": ["brand_product_lifecycle", "emerging_device_categories", "supply_chain_technology"],
+          "ingestion": {
+            "method": "public_google_devices_listing",
+            "url": "https://blog.google/products-and-platforms/devices/",
+            "status": "verified_with_current_parser"
+          },
+          "active_source_id": "google_devices_blog",
+          "notes": "已接入 Google 官方 Devices 分类页；解析公开卡片中的文章链接、标题和精确发布时间，覆盖 Pixel、Fitbit、Nest、Google Home 与 Tensor。"
+        },
+        {
+          "id": "meta_newsroom_devices",
+          "name": "Meta Newsroom (Quest / AI Glasses)",
+          "organization": "Meta",
+          "region": "global",
+          "evidence_class": "primary_disclosure",
+          "topics": ["brand_product_lifecycle", "emerging_device_categories"],
+          "ingestion": {
+            "method": "rss",
+            "url": "https://about.fb.com/news/feed/",
+            "status": "verified_with_current_parser"
+          },
+          "active_source_id": "meta_newsroom_devices",
+          "notes": "已接入 Meta 官方 Newsroom RSS；只保留 Quest、Ray-Ban Meta/Oakley Meta 和 AI 眼镜等消费终端相关披露。"
+        },
+        {
+          "id": "huawei_updates",
+          "name": "Huawei Updates",
+          "organization": "Huawei",
+          "region": "china",
+          "evidence_class": "primary_disclosure",
+          "topics": ["brand_product_lifecycle", "emerging_device_categories", "industry_supply_demand"],
+          "ingestion": {
+            "method": "rss",
+            "url": "https://www.huawei.com/en/rss-feeds/huawei-updates/rss",
+            "status": "verified_with_current_parser"
+          },
+          "notes": "涵盖企业与通信业务；需要消费电子关键词过滤。"
+        },
+        {
+          "id": "xiaomi_global_discover",
+          "name": "Xiaomi Global Discover / Newsroom",
+          "organization": "Xiaomi",
+          "region": "china",
+          "evidence_class": "primary_disclosure",
+          "topics": ["brand_product_lifecycle", "emerging_device_categories", "industry_supply_demand"],
+          "ingestion": {
+            "method": "public_json_listing_api",
+            "url": "https://www.mi.com/global/discover/",
+            "status": "verified_with_current_parser"
+          },
+          "active_source_id": "xiaomi_global_discover",
+          "notes": "已接入 Xiaomi Global Discover 的公开 Newsroom 目录接口；按官方发布时间翻页，保留正式公告并排除小米汽车主题。"
+        },
+        {
+          "id": "oppo_newsroom",
+          "name": "OPPO Newsroom",
+          "organization": "OPPO",
+          "region": "china",
+          "evidence_class": "primary_disclosure",
+          "topics": ["brand_product_lifecycle", "emerging_device_categories"],
+          "ingestion": {
+            "method": "public_listing_api",
+            "url": "https://www.oppo.com/en/newsroom/press/",
+            "status": "verified_with_current_parser"
+          },
+          "active_source_id": "oppo_newsroom",
+          "notes": "已接入 OPPO 官网公开的 Press Releases 列表接口；不访问登录、付费或会员数据。"
+        },
+        {
+          "id": "vivo_newsroom",
+          "name": "vivo Newsroom",
+          "organization": "vivo",
+          "region": "china",
+          "evidence_class": "primary_disclosure",
+          "topics": ["brand_product_lifecycle", "emerging_device_categories"],
+          "ingestion": {
+            "method": "server_rendered_listing",
+            "url": "https://www.vivo.com/en/about-vivo/news",
+            "status": "verified_with_current_parser"
+          },
+          "active_source_id": "vivo_newsroom",
+          "notes": "已接入 vivo 官网服务端直出的 News Room 列表；解析正式新闻卡片中的标题、日期与原文链接。"
+        },
+        {
+          "id": "qualcomm_releases",
+          "name": "Qualcomm Press Announcements",
+          "organization": "Qualcomm",
+          "region": "global",
+          "evidence_class": "primary_disclosure",
+          "topics": ["supply_chain_technology", "emerging_device_categories"],
+          "ingestion": {
+            "method": "public_graphql_listing_api",
+            "url": "https://www.qualcomm.com/news/releases",
+            "status": "verified_with_current_parser"
+          },
+          "active_source_id": "qualcomm_releases",
+          "notes": "已接入 Qualcomm 官网 Releases 使用的公开 GraphQL 目录；仅保留面向终端芯片、PC、XR、穿戴和品牌合作的相关正式公告。"
+        },
+        {
+          "id": "mediatek_press_room",
+          "name": "MediaTek Press Room",
+          "organization": "MediaTek",
+          "region": "global",
+          "evidence_class": "primary_disclosure",
+          "topics": ["supply_chain_technology", "emerging_device_categories"],
+          "ingestion": {
+            "method": "server_rendered_listing",
+            "url": "https://www.mediatek.com/press-room",
+            "status": "verified_with_current_parser"
+          },
+          "active_source_id": "mediatek_press_room",
+          "notes": "已接入 MediaTek 官网公开 Press Room；仅保留消费端芯片、设备和端侧技术相关披露。"
+        }
+      ]
+    },
+    {
+      "id": "industry_research_and_data",
+      "name": "二级：行业数据、供需与产业链研究",
+      "purpose": ["出货量、份额、ASP、库存", "面板、存储和零部件供需", "品牌与供应商竞争格局"],
+      "sources": [
+        {
+          "id": "idc_consumer",
+          "name": "IDC Consumer RSS",
+          "organization": "IDC",
+          "region": "global",
+          "evidence_class": "market_data",
+          "topics": ["industry_supply_demand", "emerging_device_categories"],
+          "ingestion": {
+            "method": "rss",
+            "url": "https://my.idc.com/rss/rssconsumer.xml",
+            "status": "verified_with_current_parser"
+          },
+          "notes": "内容较宽，必须增加消费电子关键词与品类过滤。"
+        },
+        {
+          "id": "counterpoint_insights",
+          "name": "Counterpoint Research Insights",
+          "organization": "Counterpoint Research",
+          "region": "global",
+          "evidence_class": "market_data",
+          "topics": ["industry_supply_demand", "brand_product_lifecycle", "emerging_device_categories"],
+          "ingestion": {
+            "method": "public_html_listing_adapter",
+            "url": "https://counterpointresearch.com/en/insights",
+            "status": "verified_with_current_parser"
+          },
+          "notes": "已接入公开 Insights 列表；仅纳入共同消费电子过滤规则命中的公开文章，受限研究门户不抓取。"
+        },
+        {
+          "id": "trendforce_consumer_electronics",
+          "name": "TrendForce Consumer Electronics",
+          "organization": "TrendForce",
+          "region": "global",
+          "evidence_class": "market_data",
+          "topics": ["industry_supply_demand", "supply_chain_technology", "emerging_device_categories"],
+          "ingestion": {
+            "method": "rss_or_website",
+            "url": "https://www.trendforce.com/news/category/consumer-electronics/",
+            "status": "rss_url_to_be_confirmed"
+          }
+        }
+      ]
+    },
+    {
+      "id": "supply_chain_reporting_and_analysts",
+      "name": "二级补充：供应链报道与产业链分析师",
+      "purpose": ["供应商名单与设计导入", "备货、订单、产能与零部件技术", "台湾及亚洲制造链的早期变化"],
+      "sources": [
+        {
+          "id": "digitimes",
+          "name": "DigiTimes（电子时报）",
+          "region": "taiwan_asia",
+          "evidence_class": "early_signal",
+          "topics": ["supply_chain_technology", "industry_supply_demand", "emerging_device_categories"],
+          "ingestion": {
+            "method": "rss",
+            "url": "https://www.digitimes.com/rss/daily.xml",
+            "status": "verified_with_current_parser"
+          },
+          "active_source_id": "digitimes",
+          "notes": "已接入官方 daily RSS。产业链采访价值高；未公开订单、供应商名单和出货判断必须归因给 DigiTimes，不作为单独确认事实。"
+        },
+        {
+          "id": "economic_daily_news",
+          "name": "经济日报（台湾）",
+          "region": "taiwan_asia",
+          "evidence_class": "industry_reporting",
+          "topics": ["supply_chain_technology", "industry_supply_demand"],
+          "ingestion": {
+            "method": "json_ld_listing",
+            "url": "https://money.udn.com/money/cate/5591",
+            "status": "verified_with_json_ld_listing_adapter"
+          },
+          "active_source_id": "economic_daily_industry",
+          "notes": "已接入公开产业列表页；原始页面的繁体中文与消费电子词表共同过滤。"
+        },
+        {
+          "id": "commercial_times",
+          "name": "工商时报（台湾）",
+          "region": "taiwan_asia",
+          "evidence_class": "industry_reporting",
+          "topics": ["supply_chain_technology", "industry_supply_demand"],
+          "ingestion": {
+            "method": "authorized_public_feed_or_api",
+            "url": "https://www.ctee.com.tw/",
+            "status": "robots_restricted_pending_authorized_feed"
+          },
+          "notes": "网站自动抓取受 robots 限制，且历史检索存在登录要求；不绕过限制。待获得官方 RSS、授权 API 或可公开稳定栏目后再接入。"
+        },
+        {
+          "id": "ming_chi_kuo",
+          "name": "郭明錤（Ming-Chi Kuo）",
+          "region": "taiwan_asia",
+          "evidence_class": "early_signal",
+          "topics": ["brand_product_lifecycle", "supply_chain_technology", "emerging_device_categories"],
+          "ingestion": {
+            "method": "public_medium_rss",
+            "url": "https://medium.com/feed/@mingchikuo",
+            "status": "verified_with_current_parser"
+          },
+          "active_source_id": "ming_chi_kuo",
+          "notes": "已接入公开 Medium RSS。将预测与供应链判断归因给分析师；同一传闻需要独立媒体、另一位分析师或官方信息佐证。"
+        },
+        {
+          "id": "ross_young_dscc",
+          "name": "Ross Young / DSCC",
+          "region": "global",
+          "evidence_class": "early_signal",
+          "topics": ["supply_chain_technology", "brand_product_lifecycle", "emerging_device_categories"],
+          "ingestion": {
+            "method": "x",
+            "url": "https://x.com/DSCCRoss",
+            "handle": "DSCCRoss",
+            "status": "verified_with_current_parser"
+          },
+          "notes": "已通过 X 适配器接入。主要用于显示供应链和产品路线线索；日刊需标为“线索/传闻”。"
+        }
+      ]
+    },
+    {
+      "id": "market_data_and_sales_tracking",
+      "name": "二级补充：销量、零售与供需数据",
+      "purpose": ["出货、份额、ASP、价格、库存", "电商和线下渠道变化", "中国出口与品类景气"],
+      "sources": [
+        {
+          "id": "canalys_omdia",
+          "name": "Canalys / Omdia Consumer",
+          "organization": "Omdia（已整合 Canalys 内容）",
+          "region": "global",
+          "evidence_class": "market_data",
+          "topics": ["industry_supply_demand", "brand_product_lifecycle", "emerging_device_categories"],
+          "ingestion": {
+            "method": "authorized_public_feed_or_api",
+            "url": "https://omdia.tech.informa.com/consumer",
+            "status": "public_page_currently_blocks_automated_fetch"
+          },
+          "notes": "Omdia 的公开发布可供人工查看，但当前自动访问返回 403；不绕过访问限制。待官方 RSS、API 或允许的稳定公开栏目后再接入。保留“Canalys”作为历史检索标签；引用时明确数据机构、口径、地区与季度。"
+        },
+        {
+          "id": "techinsights_consumer_electronics",
+          "name": "TechInsights Consumer Electronics",
+          "region": "global",
+          "evidence_class": "market_data",
+          "topics": ["industry_supply_demand", "supply_chain_technology", "emerging_device_categories"],
+          "ingestion": {
+            "method": "website_or_licensed_feed",
+            "url": "https://www.techinsights.com/techinsights-Consumer-Electronics",
+            "status": "requires_public_endpoint_and_license_review"
+          },
+          "notes": "可覆盖预测、需求数据与拆解；付费研究仅使用公开可引用部分。"
+        },
+        {
+          "id": "cinno_research",
+          "name": "CINNO Research",
+          "region": "china",
+          "evidence_class": "market_data",
+          "topics": ["industry_supply_demand", "supply_chain_technology"],
+          "ingestion": {
+            "method": "public_html_listing_adapter",
+            "url": "https://www.cinno.com.cn/industry/insights",
+            "status": "verified_with_current_parser"
+          },
+          "notes": "已接入公开行业洞察列表；重点关注显示、面板、终端统计、XR 与电子纸的公开摘要。付费报告不抓取。"
+        },
+        {
+          "id": "runto",
+          "name": "洛图科技（RUNTO）",
+          "region": "china",
+          "evidence_class": "market_data",
+          "topics": ["industry_supply_demand", "emerging_device_categories"],
+          "ingestion": {
+            "method": "website_or_licensed_feed",
+            "status": "public_endpoint_and_license_to_be_confirmed"
+          },
+          "notes": "适合电视、显示、智能家居及部分新兴终端的销量与渠道跟踪。"
+        },
+        {
+          "id": "jingcanmou",
+          "name": "鲸参谋",
+          "region": "china",
+          "evidence_class": "market_data",
+          "topics": ["industry_supply_demand", "brand_product_lifecycle"],
+          "ingestion": {
+            "method": "licensed_data_export_or_public_reports",
+            "status": "requires_authorized_access"
+          },
+          "notes": "电商平台销量、价格和店铺监测；不抓取需要登录的数据面板。"
+        },
+        {
+          "id": "magic_mirror",
+          "name": "魔镜洞察",
+          "region": "china",
+          "evidence_class": "market_data",
+          "topics": ["industry_supply_demand", "brand_product_lifecycle"],
+          "ingestion": {
+            "method": "licensed_data_export_or_public_reports",
+            "status": "requires_authorized_access"
+          },
+          "notes": "电商和消费者洞察；只接入公开报告或用户授权导出的数据。"
+        },
+        {
+          "id": "avc",
+          "name": "奥维云网（AVC）",
+          "region": "china",
+          "evidence_class": "market_data",
+          "topics": ["industry_supply_demand", "emerging_device_categories"],
+          "ingestion": {
+            "method": "website_or_licensed_feed",
+            "status": "public_endpoint_and_license_to_be_confirmed"
+          },
+          "notes": "重点用于家电、显示和零售渠道，不应替代手机或 PC 的全品类统计。"
+        },
+        {
+          "id": "china_customs_trade_statistics",
+          "name": "中国海关进出口统计",
+          "organization": "海关总署",
+          "region": "china",
+          "evidence_class": "primary_disclosure",
+          "topics": ["industry_supply_demand", "supply_chain_technology"],
+          "ingestion": {
+            "method": "official_statistics_adapter",
+            "url": "https://www.customs.gov.cn/",
+            "status": "requires_table_mapping_and_periodic_adapter"
+          },
+          "notes": "用于出口金额、数量和目的地趋势；需先确定 HS 编码映射，避免将“手机/自动数据处理设备/零部件”混算。"
+        }
+      ]
+    },
+    {
+      "id": "platform_business_and_market_commentary",
+      "name": "三级补充：平台、商业模式与科技市场观察",
+      "purpose": ["端侧 AI 的平台入口与生态", "消费电子产品的商业模式、开发者关系与媒体声量"],
+      "sources": [
+        {
+          "id": "ben_thompson_stratechery",
+          "name": "Ben Thompson / Stratechery",
+          "region": "global",
+          "evidence_class": "industry_reporting",
+          "topics": ["emerging_device_categories", "industry_supply_demand"],
+          "ingestion": {
+            "method": "x",
+            "url": "https://x.com/benthompson",
+            "handle": "benthompson",
+            "status": "verified_with_current_parser"
+          },
+          "notes": "已通过 X 适配器接入；用于平台与商业模式解释，不作为销量或供应商名单事实来源。"
+        },
+        {
+          "id": "christopher_mims_wsj",
+          "name": "Christopher Mims / WSJ 科技专栏",
+          "region": "global",
+          "evidence_class": "industry_reporting",
+          "topics": ["brand_product_lifecycle", "emerging_device_categories", "industry_supply_demand"],
+          "ingestion": {
+            "method": "x",
+            "url": "https://x.com/mims",
+            "handle": "mims",
+            "status": "verified_with_current_parser"
+          },
+          "notes": "已通过 X 适配器接入；付费文章只使用公开标题、摘要和可访问的原始引文。"
+        },
+        {
+          "id": "casey_newton_platformer",
+          "name": "Casey Newton / Platformer",
+          "region": "global",
+          "evidence_class": "industry_reporting",
+          "topics": ["emerging_device_categories", "industry_supply_demand"],
+          "ingestion": {
+            "method": "x",
+            "url": "https://x.com/CaseyNewton",
+            "handle": "CaseyNewton",
+            "status": "verified_with_current_parser"
+          },
+          "notes": "已通过 X 适配器接入；只保留与 AI 终端、平台分发和设备生态直接相关的内容。"
+        }
+      ]
+    },
+    {
+      "id": "product_rumors_reviews_and_creator_feedback",
+      "name": "三级：新品线索、媒体评测与 KOL 声量",
+      "purpose": ["未发布产品的可追溯线索", "新品上市后的体验、拆解与市场评价", "中英文消费电子创作者的早期反馈"],
+      "sources": [
+        {
+          "id": "mark_gurman_power_on",
+          "name": "Mark Gurman / Bloomberg Power On",
+          "region": "global",
+          "evidence_class": "early_signal",
+          "topics": ["brand_product_lifecycle", "emerging_device_categories", "supply_chain_technology"],
+          "ingestion": {
+            "method": "x",
+            "url": "https://x.com/markgurman",
+            "handle": "markgurman",
+            "status": "verified_with_current_parser"
+          },
+          "notes": "Bloomberg 将 @markgurman 标为 Power On 作者；付费内容只取可公开引用的元数据，未证实消息标为传闻。"
+        },
+        {
+          "id": "evan_blass_evleaks",
+          "name": "Evan Blass / evleaks",
+          "region": "global",
+          "evidence_class": "early_signal",
+          "topics": ["brand_product_lifecycle", "emerging_device_categories"],
+          "ingestion": {
+            "method": "x",
+            "url": "https://x.com/evleaks",
+            "handle": "evleaks",
+            "status": "verified_with_current_parser"
+          },
+          "notes": "已通过 X 适配器接入；产品泄露只作为早期线索，需独立来源或官方后续披露验证。"
+        },
+        {
+          "id": "jon_prosser",
+          "name": "Jon Prosser",
+          "region": "global",
+          "evidence_class": "early_signal",
+          "topics": ["brand_product_lifecycle", "emerging_device_categories"],
+          "ingestion": {
+            "method": "x",
+            "url": "https://x.com/jon_prosser",
+            "handle": "jon_prosser",
+            "status": "verified_with_current_parser"
+          },
+          "notes": "以用户指定的公开 X 帐号接入；产品泄露只作为早期线索，需独立来源或官方后续披露验证。"
+        },
+        {
+          "id": "patrick_kennedys_it",
+          "name": "Patrick Kennedy IT",
+          "region": "global",
+          "evidence_class": "early_signal",
+          "topics": ["supply_chain_technology", "emerging_device_categories"],
+          "ingestion": {
+            "method": "x",
+            "url": "https://x.com/PatrickKennedyIT",
+            "handle": "PatrickKennedyIT",
+            "status": "verified_with_current_parser"
+          },
+          "notes": "已通过 X 适配器接入；涉及产品路线和供应链的判断按早期线索处理。"
+        },
+        {
+          "id": "shrimpapplepro",
+          "name": "ShrimpApplePro",
+          "region": "global",
+          "evidence_class": "early_signal",
+          "topics": ["brand_product_lifecycle", "emerging_device_categories"],
+          "ingestion": {
+            "method": "x",
+            "url": "https://x.com/VNchocoTaco",
+            "handle": "VNchocoTaco",
+            "status": "verified_with_current_parser"
+          },
+          "notes": "以公开 X 帐号接入；产品泄露只作为早期线索，需独立来源或官方后续披露验证。"
+        },
+        {
+          "id": "front_page_tech",
+          "name": "Front Page Tech",
+          "region": "global",
+          "evidence_class": "early_signal",
+          "topics": ["brand_product_lifecycle", "emerging_device_categories"],
+          "ingestion": {
+            "method": "x",
+            "url": "https://x.com/frontpagetech",
+            "handle": "frontpagetech",
+            "status": "verified_with_current_parser"
+          },
+          "notes": "已通过 X 适配器接入；YouTube 频道未接入，不将视频状态混同为 X 抓取状态。"
+        },
+        {
+          "id": "aaron_p613",
+          "name": "Aaron p613",
+          "region": "global",
+          "evidence_class": "early_signal",
+          "topics": ["brand_product_lifecycle", "emerging_device_categories"],
+          "ingestion": {
+            "method": "x",
+            "url": "https://x.com/aaronp613",
+            "handle": "aaronp613",
+            "status": "verified_with_current_parser"
+          },
+          "notes": "已通过 X 适配器接入；产品泄露只作为早期线索。"
+        },
+        {
+          "id": "rene_ritchie",
+          "name": "Rene Ritchie",
+          "region": "global",
+          "evidence_class": "review_feedback",
+          "topics": ["brand_product_lifecycle", "emerging_device_categories"],
+          "ingestion": {
+            "method": "x",
+            "url": "https://x.com/reneritchie",
+            "handle": "reneritchie",
+            "status": "verified_with_current_parser"
+          },
+          "notes": "已通过 X 适配器接入；YouTube 频道未接入。"
+        },
+        {
+          "id": "bindu_reddy",
+          "name": "Bindu Reddy",
+          "region": "global",
+          "evidence_class": "industry_reporting",
+          "topics": ["emerging_device_categories"],
+          "ingestion": {
+            "method": "x",
+            "url": "https://x.com/bindureddy",
+            "handle": "bindureddy",
+            "status": "verified_with_current_parser"
+          },
+          "notes": "已通过 X 适配器接入；只保留与端侧模型、AI 终端和产品生态直接相关的观点。"
+        },
+        {
+          "id": "the_verge",
+          "name": "The Verge",
+          "region": "global",
+          "evidence_class": "review_feedback",
+          "topics": ["brand_product_lifecycle", "emerging_device_categories"],
+          "ingestion": {
+            "method": "rss_and_x",
+            "url": "https://www.theverge.com/rss/index.xml",
+            "handle": "verge",
+            "status": "verified_with_current_parser"
+          },
+          "active_source_id": "the_verge",
+          "notes": "已接入公开 RSS 与 X；两条路径使用相同过滤和去重策略。"
+        },
+        {
+          "id": "9to5mac",
+          "name": "9to5Mac",
+          "region": "global",
+          "evidence_class": "industry_reporting",
+          "topics": ["brand_product_lifecycle", "emerging_device_categories"],
+          "ingestion": {
+            "method": "rss",
+            "url": "https://9to5mac.com/feed/",
+            "status": "verified_with_current_parser"
+          },
+          "active_source_id": "9to5mac"
+        },
+        {
+          "id": "macrumors",
+          "name": "MacRumors",
+          "region": "global",
+          "evidence_class": "industry_reporting",
+          "topics": ["brand_product_lifecycle", "emerging_device_categories"],
+          "ingestion": {
+            "method": "rss",
+            "url": "https://feeds.macrumors.com/MacRumors-All",
+            "status": "verified_with_current_parser"
+          },
+          "active_source_id": "macrumors"
+        },
+        {
+          "id": "mkbhd",
+          "name": "Marques Brownlee / MKBHD",
+          "region": "global",
+          "evidence_class": "review_feedback",
+          "topics": ["brand_product_lifecycle", "emerging_device_categories"],
+          "ingestion": {
+            "method": "x",
+            "url": "https://x.com/MKBHD",
+            "handle": "mkbhd",
+            "status": "verified_with_current_parser"
+          },
+          "notes": "已通过 X 适配器接入；YouTube 频道未接入。"
+        },
+        {
+          "id": "ifixit",
+          "name": "iFixit",
+          "region": "global",
+          "evidence_class": "review_feedback",
+          "topics": ["supply_chain_technology", "brand_product_lifecycle", "emerging_device_categories"],
+          "ingestion": {
+            "method": "rss",
+            "url": "https://www.ifixit.com/News/rss",
+            "status": "verified_rss_adapter_with_public_cookie"
+          },
+          "active_source_id": "ifixit",
+          "notes": "已接入公开 RSS；仅对拆解、可维修性、可替换电池和零部件可得性启用来源级优先词。"
+        },
+        {
+          "id": "geekerwan",
+          "name": "极客湾 Geekerwan",
+          "region": "china",
+          "evidence_class": "review_feedback",
+          "topics": ["supply_chain_technology", "brand_product_lifecycle", "emerging_device_categories"],
+          "ingestion": {
+            "method": "youtube_atom",
+            "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCeUJO1H3TEXu2syfAAPjYKQ",
+            "status": "temporarily_disabled_endpoint_404"
+          },
+          "notes": "官方 YouTube Atom endpoint 最近返回 404，已在运行配置中暂停，避免将技术错误伪装成无更新。恢复可验证的公开订阅接口后再重新启用；偏芯片、性能和工程分析，适合验证技术体验，非市场规模数据。"
+        },
+        {
+          "id": "xiaobai_review",
+          "name": "小白测评",
+          "region": "china",
+          "evidence_class": "review_feedback",
+          "topics": ["brand_product_lifecycle", "emerging_device_categories"],
+          "ingestion": {
+            "method": "youtube_and_bilibili_channel",
+            "status": "official_channels_to_be_confirmed"
+          }
+        },
+        {
+          "id": "lin_yi_lyi",
+          "name": "林亦LYi",
+          "region": "china",
+          "evidence_class": "review_feedback",
+          "topics": ["brand_product_lifecycle", "emerging_device_categories"],
+          "ingestion": {
+            "method": "youtube_and_bilibili_channel",
+            "status": "official_channels_to_be_confirmed"
+          }
+        },
+        {
+          "id": "zhong_wenze",
+          "name": "钟文泽",
+          "region": "china",
+          "evidence_class": "review_feedback",
+          "topics": ["brand_product_lifecycle", "emerging_device_categories"],
+          "ingestion": {
+            "method": "youtube_and_bilibili_channel",
+            "status": "official_channels_to_be_confirmed"
+          }
+        },
+        {
+          "id": "yingshi_jufeng",
+          "name": "影视飓风",
+          "region": "china",
+          "evidence_class": "review_feedback",
+          "topics": ["brand_product_lifecycle", "emerging_device_categories"],
+          "ingestion": {
+            "method": "youtube_and_bilibili_channel",
+            "status": "official_channels_to_be_confirmed"
+          },
+          "notes": "侧重影像、创作工具和体验趋势；只保留与消费电子终端直接相关的内容。"
+        },
+        {
+          "id": "ifanr",
+          "name": "爱范儿",
+          "region": "china",
+          "evidence_class": "review_feedback",
+          "topics": ["brand_product_lifecycle", "emerging_device_categories"],
+          "ingestion": {
+            "method": "rss",
+            "url": "https://www.ifanr.com/feed/",
+            "status": "verified_rss_adapter"
+          },
+          "active_source_id": "ifanr",
+          "notes": "已接入公开全文 RSS；与消费电子词表共同过滤，并用来源级词表排除汽车车型命名、泛互联网和促销内容。"
+        },
+        {
+          "id": "chaping",
+          "name": "差评",
+          "region": "china",
+          "evidence_class": "review_feedback",
+          "topics": ["brand_product_lifecycle", "emerging_device_categories"],
+          "ingestion": {
+            "method": "website_or_video_channel",
+            "status": "requires_public_feed_or_channel_discovery"
+          },
+          "notes": "保留具体产品评测和消费趋势内容，过滤泛互联网娱乐话题。"
+        }
+      ]
+    },
+    {
+      "id": "reviews_and_market_feedback",
+      "name": "三级：评测与市场反馈",
+      "purpose": ["新品的真实体验", "上市后的市场评价", "AI 功能和新形态设备的可用性"],
+      "sources": [
+        {
+          "id": "android_authority",
+          "name": "Android Authority",
+          "region": "global",
+          "evidence_class": "review_feedback",
+          "topics": ["brand_product_lifecycle", "emerging_device_categories"],
+          "ingestion": {
+            "method": "rss",
+            "url": "https://www.androidauthority.com/feed/",
+            "status": "blocked_by_403_in_current_probe"
+          },
+          "notes": "用于产品评价和 Android 端侧设备动态，不作为出货或供应链事实依据；当前公开抓取返回 403，暂不启用。"
+        },
+        {
+          "id": "gsmarena",
+          "name": "GSMArena News and Reviews",
+          "region": "global",
+          "evidence_class": "review_feedback",
+          "topics": ["brand_product_lifecycle"],
+          "ingestion": {
+            "method": "rss",
+            "url": "https://www.gsmarena.com/rss-news-reviews.php3",
+            "status": "verified_with_current_parser"
+          },
+          "active_source_id": "gsmarena"
+        }
+      ]
+    },
+    {
+      "id": "china_supply_chain_disclosures",
+      "name": "四级：中国产业链公司披露",
+      "purpose": ["订单、备货、技术导入、产能和财报", "品牌供应链名单与零部件变化"],
+      "sources": [
+        {
+          "id": "listed_company_disclosures",
+          "name": "交易所公告与公司 IR",
+          "region": "china",
+          "evidence_class": "primary_disclosure",
+          "topics": ["supply_chain_technology", "industry_supply_demand"],
+          "ingestion": {
+            "method": "public_cninfo_title_search",
+            "url": "https://www.cninfo.com.cn/new/fulltextSearch/full",
+            "status": "verified_with_current_parser"
+          },
+          "active_source_id": "cninfo_consumer_supply_chain",
+          "notes": "已接入巨潮资讯公开标题检索，覆盖立讯、歌尔、京东方、蓝思、华勤、闻泰、韦尔、兆易、汇顶、领益、鹏鼎、东山、天马、水晶光电、欧菲、长盈、环旭、欣旺达、德赛、瑞芯微、全志、顺络、生益、传音和安克等。保留官方 PDF 链接，不抓取公告全文。"
+        }
+      ]
+    }
+  ]
+}

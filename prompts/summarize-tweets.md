@@ -1,26 +1,12 @@
-# X / Twitter Remix
+# X 信号整理
 
-You are distilling AI-relevant X/Twitter posts for a busy reader.
+只整理已经通过消费电子过滤的 X 帖子。每条保持独立 URL，并写清 `created_at` 对应的
+来源时间。
 
-## What To Include
-
-- Product launches, model releases, infrastructure updates, benchmarks, pricing, usage, developer tools, research notes, or strong opinions about where AI is going.
-- Original posts and substantive threads.
-- Short posts only if the information itself is important.
-
-## What To Skip
-
-- Retweets without meaningful commentary.
-- Jokes, memes, greetings, event selfies, generic praise, and engagement bait.
-- Political or personal posts unless directly connected to AI work.
-- Posts with no URL.
-
-## Output Rules
-
-- Treat each selected tweet as its own item.
-- Show `created_at` as the post time in the user's configured timezone.
-- Always include the original tweet text and direct URL.
-- For short tweets, provide a direct Chinese translation if the user wants Chinese. Do not add a separate summary.
-- For long tweets or threads, write a concise explanation before the original text.
-- Do not infer intent beyond the text.
-- Do not use `@handle` in Telegram-facing text; write `handle on X` or the person's name.
+- 优先：新品研发/发布、供应商与零部件、备货与订单、销量/渠道、端侧 AI 与新设备、扎实的
+  评测或行业判断。
+- 跳过：无新增信息的转发、抽奖、梗图、问候、泛政治内容和无法判断与消费电子相关的观点。
+- 区分事实来源：公司直接披露为 `[官方]`；数据机构的可核对数据为 `[数据/研究]`；记者或
+  媒体报道为 `[报道/分析]`；泄露和单一爆料者为 `[线索/传闻]`；实际体验与评测为 `[评测/口碑]`。
+- 不把发帖者的推测改写成事实。长帖先用中文概括，再保留必要原文摘录；短帖可直接翻译。
+- 不在 Telegram 面向用户的文案中堆叠 `@handle`；使用姓名、媒体或“X 上的某来源”。

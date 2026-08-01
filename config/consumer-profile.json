@@ -1,0 +1,276 @@
+{
+  "id": "consumer_electronics",
+  "project_name": "Consumer Signal",
+  "display_name": "Consumer Signal 消费电子日报",
+  "version": 1,
+  "scope": {
+    "languages": ["zh", "en"],
+    "public_sources_only": true,
+    "coverage_principle": "不设置地区、品牌、品类或来源类型的预设比例；按信息重要性、证据强度、新颖性和对消费电子行业的解释力入选。",
+    "regions": ["global", "china", "taiwan_asia"],
+    "primary_audience": "关注全球消费电子品牌、端侧 AI 与中国产业链变化的研究者和投资者"
+  },
+  "segments": [
+    {
+      "id": "smartphones_tablets",
+      "name": "手机与平板",
+      "priority": 1,
+      "focus": ["新品与产品线", "规格和定价", "销量、份额与 ASP", "渠道、库存与促销", "端侧 AI 功能"]
+    },
+    {
+      "id": "pc_tablets",
+      "name": "PC 与平板计算",
+      "priority": 1,
+      "focus": ["AI PC", "SoC 与操作系统", "换机周期", "商用与消费需求", "品牌份额"]
+    },
+    {
+      "id": "wearables_audio",
+      "name": "穿戴、耳机与健康设备",
+      "priority": 1,
+      "focus": ["智能手表", "TWS", "健康传感", "运动设备", "生态联动"]
+    },
+    {
+      "id": "ai_spatial_terminals",
+      "name": "AI 与空间计算终端",
+      "priority": 1,
+      "focus": ["AI 眼镜", "AR/VR/XR", "AI 耳机", "AI Pin 与新型随身设备", "端侧模型与交互", "真实使用与商业化"]
+    },
+    {
+      "id": "smart_home_other_devices",
+      "name": "智能家居与其他消费设备",
+      "priority": 2,
+      "focus": ["智能家居", "影像设备", "游戏与娱乐硬件", "机器人", "跨设备互联"]
+    },
+    {
+      "id": "core_components",
+      "name": "核心零部件",
+      "priority": 1,
+      "focus": ["SoC 与射频", "存储", "显示", "摄像头与光学", "电池", "声学", "PCB、连接器与结构件"]
+    },
+    {
+      "id": "manufacturing_supply_chain",
+      "name": "制造、供应链与渠道",
+      "priority": 1,
+      "focus": ["ODM/EMS", "组装与测试", "产能与良率", "订单与库存", "零售、电商与运营商渠道"]
+    }
+  ],
+  "watchlists": {
+    "global_brands": [
+      "Apple",
+      "Samsung",
+      "Google",
+      "Meta",
+      "Sony",
+      "Lenovo",
+      "Dell",
+      "HP",
+      "Garmin",
+      "Nintendo"
+    ],
+    "china_brands": [
+      "Xiaomi",
+      "OPPO",
+      "vivo",
+      "Huawei",
+      "HONOR",
+      "Transsion",
+      "Lenovo",
+      "DJI",
+      "XREAL",
+      "Rokid"
+    ],
+    "platform_and_component_companies": [
+      "Qualcomm",
+      "MediaTek",
+      "Samsung Electronics",
+      "SK hynix",
+      "Micron",
+      "TSMC",
+      "Sony Semiconductor Solutions",
+      "Samsung Display",
+      "LG Display",
+      "BOE",
+      "TCL CSOT",
+      "Will Semiconductor",
+      "Sunny Optical",
+      "Goertek",
+      "Luxshare Precision",
+      "BYD Electronic",
+      "Foxconn",
+      "Huaqin",
+      "Wingtech",
+      "Longcheer",
+      "Sunwoda"
+    ]
+  },
+  "signal_types": [
+    {
+      "id": "product",
+      "name": "产品与发布",
+      "examples": ["研发路线", "新品", "规格", "定价", "上市节奏", "产品线调整"]
+    },
+    {
+      "id": "market_reception",
+      "name": "上市后评价与反馈",
+      "examples": ["媒体评测", "消费者反馈", "销量初判", "产品缺陷", "口碑变化", "退货与促销"]
+    },
+    {
+      "id": "ai_terminal",
+      "name": "端侧 AI 与新形态",
+      "examples": ["AI 眼镜", "AI 手机", "AI PC", "端侧模型", "交互方式", "生态"]
+    },
+    {
+      "id": "demand",
+      "name": "需求与渠道",
+      "examples": ["出货量", "份额", "ASP", "库存", "促销", "零售与电商数据"]
+    },
+    {
+      "id": "supply_chain",
+      "name": "供应链与制造",
+      "examples": ["供应商名单", "设计导入", "备货", "订单", "产能", "良率", "交期", "代工", "库存"]
+    },
+    {
+      "id": "components",
+      "name": "零部件与技术路线",
+      "examples": ["SoC", "存储", "显示", "光学", "摄像头", "电池", "声学"]
+    },
+    {
+      "id": "financials",
+      "name": "财报与经营指引",
+      "examples": ["业绩", "指引", "资本开支", "毛利率", "库存减值"]
+    },
+    {
+      "id": "competition_policy",
+      "name": "竞争、政策与地区变化",
+      "examples": ["贸易", "监管", "供应限制", "专利", "市场准入"]
+    }
+  ],
+  "top_level_topics": [
+    {
+      "id": "brand_product_lifecycle",
+      "name": "终端品牌：研发、上市与市场评价",
+      "signals": ["product", "market_reception"],
+      "questions": [
+        "品牌正在研发或规划什么新品与产品路线？",
+        "新品的规格、定价、上市节奏和渠道策略是否改变竞争格局？",
+        "发布后的媒体评测、消费者反馈和早期销售表现如何？"
+      ]
+    },
+    {
+      "id": "supply_chain_technology",
+      "name": "供应链、备货与新技术",
+      "signals": ["supply_chain", "components"],
+      "questions": [
+        "哪些供应商获得设计导入，品牌如何调整供应链名单？",
+        "备货、订单、产能、库存和交期传递了怎样的需求信号？",
+        "芯片、显示、光学、摄像头、电池和结构件有哪些技术升级？"
+      ]
+    },
+    {
+      "id": "industry_supply_demand",
+      "name": "行业供给、需求与渠道",
+      "signals": ["demand", "financials", "competition_policy"],
+      "questions": [
+        "各品类的出货、份额、ASP、库存和价格处于什么周期？",
+        "零售、电商、运营商和地区渠道是否出现边际变化？",
+        "品牌、供应商与分析机构对未来需求和供给的判断有何分歧？"
+      ]
+    },
+    {
+      "id": "emerging_device_categories",
+      "name": "新兴品类与端侧 AI",
+      "signals": ["ai_terminal", "product", "market_reception"],
+      "questions": [
+        "AI PC、AI 手机、AI 眼镜、XR、智能音箱等新品类的关键进展是什么？",
+        "它们的核心交互、端侧能力、成本结构和供应链是否趋于成熟？",
+        "真实用户需求、出货与商业化是否已获得验证？"
+      ]
+    }
+  ],
+  "editorial_sections": [
+    {
+      "id": "brand_product_lifecycle",
+      "name": "终端品牌：研发、上市与市场评价",
+      "topic": "brand_product_lifecycle"
+    },
+    {
+      "id": "supply_chain_technology",
+      "name": "供应链、备货与新技术",
+      "topic": "supply_chain_technology"
+    },
+    {
+      "id": "industry_supply_demand",
+      "name": "行业供给、需求与渠道",
+      "topic": "industry_supply_demand"
+    },
+    {
+      "id": "emerging_device_categories",
+      "name": "新兴品类与端侧 AI",
+      "topic": "emerging_device_categories"
+    }
+  ],
+  "evidence_policy": {
+    "classes": [
+      {
+        "id": "primary_disclosure",
+        "name": "官方披露",
+        "daily_label": "官方",
+        "use_for": ["产品发布", "财报与指引", "监管与海关统计", "公司公告"],
+        "rule": "可陈述为已确认事实，但需保留原始链接和发布日期。"
+      },
+      {
+        "id": "market_data",
+        "name": "第三方数据与研究",
+        "daily_label": "数据/研究",
+        "use_for": ["出货量", "份额", "ASP", "零售与渠道", "零部件供需预测"],
+        "rule": "必须注明机构、统计口径、地区、时间范围和预测/实绩属性；付费报告只引用公开摘要。"
+      },
+      {
+        "id": "industry_reporting",
+        "name": "专业报道与分析",
+        "daily_label": "报道/分析",
+        "use_for": ["供应链访谈", "产品路线", "平台与商业模式", "行业解释"],
+        "rule": "将消息来源归因给报道机构或分析者；若涉及未公开订单、供应商或销量，只能写为其报道/判断。"
+      },
+      {
+        "id": "early_signal",
+        "name": "早期信号与爆料",
+        "daily_label": "线索/传闻",
+        "use_for": ["研发线索", "未发布规格", "备货传闻", "新品时间表"],
+        "rule": "必须显式标为线索或传闻，不得单独作为确认事实或定量结论的依据。"
+      },
+      {
+        "id": "review_feedback",
+        "name": "评测、创作者与用户反馈",
+        "daily_label": "评测/口碑",
+        "use_for": ["产品体验", "可用性", "上市后的舆情与评价"],
+        "rule": "用于解释体验与市场反应，不能外推为全市场销量、供应链订单或普遍消费者结论。"
+      }
+    ],
+    "corroboration_rules": [
+      "单个早期信号需由至少两个相互独立的来源佐证，或由后续官方披露支持，才能升级为已验证事件。",
+      "同一新闻稿、同一匿名消息源的转述不视为独立佐证。",
+      "供应商名单、订单、备货与产能信息优先等待公司公告、财报电话会、海关数据或至少一家专业产业链媒体的可追溯报道。",
+      "评测和 KOL 观点必须保留来源归属；存在明显赞助、样机限制或利益关系时应降权或标注。"
+    ],
+    "daily_composition": {
+      "selection_principle": "不设置地区、来源、证据类别或栏目数量配额；只依据重要性、证据强度、新颖性和去重结果组织日报。",
+      "duplicate_event_rule": "同一事件优先保留证据等级最高的一个主条目，其他来源作为佐证链接。"
+    }
+  },
+  "ranking_rules": {
+    "must_keep": [
+      "重大新品、产品线或价格策略变化",
+      "真实出货、库存、份额、ASP 或渠道数据",
+      "品牌与供应商之间的订单、设计导入或产能变化",
+      "AI 终端的量产、销售、使用反馈或关键技术进展",
+      "财报、业绩指引、资本开支与监管限制"
+    ],
+    "deprioritize": [
+      "无新增信息的营销内容",
+      "单纯转发、庆祝、抽奖和个人生活内容",
+      "没有来源或无法判断时间的信息",
+      "与消费电子、端侧 AI 或产业链无实质关联的泛科技内容"
+    ]
+  }
+}

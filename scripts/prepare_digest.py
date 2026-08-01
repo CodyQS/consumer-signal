@@ -3,9 +3,9 @@
 Pulls feed JSONs from the central GitHub repo, combines them with the user's
 local config and prompt preferences, then:
 
-1. Filters out items this user has already been shown (~/.ai-signal/seen.json).
+1. Filters out items this user has already been shown (~/.consumer-signal/seen.json).
    Central feeds are rolling-window snapshots; per-user dedup happens here.
-2. Writes a metadata-first payload to `~/.ai-signal/payload/payload.json`.
+2. Writes a metadata-first payload to `~/.consumer-signal/payload/payload.json`.
    Podcast transcripts remain remote and are fetched one at a time only when
    the user explicitly asks to expand an episode.
 3. Prints a compact JSON manifest to stdout (stats, config, output contract,
@@ -31,20 +31,14 @@ from feedback import summarize_feedback
 SCRIPT_DIR = Path(__file__).parent
 ROOT_DIR = SCRIPT_DIR.parent
 
-RAW_BASE = "https://raw.githubusercontent.com/Benboerba620/ai-signal/main"
-# Tried in order. raw.githubusercontent.com is blocked in some regions
-# (notably mainland China), and cdn.jsdelivr.net itself is unreliable there
-# since its mainland nodes were shut down. The extra jsDelivr endpoints serve
-# the same repo content through different CDN networks (Fastly / Gcore /
-# Cloudflare), so at least one is usually reachable without a proxy.
-# Override with AI_SIGNAL_BASE_URLS="https://base1,https://base2" if needed.
-MIRROR_BASES = [
-    RAW_BASE,
-    "https://cdn.jsdelivr.net/gh/Benboerba620/ai-signal@main",
-    "https://fastly.jsdelivr.net/gh/Benboerba620/ai-signal@main",
-    "https://gcore.jsdelivr.net/gh/Benboerba620/ai-signal@main",
-    "https://testingcf.jsdelivr.net/gh/Benboerba620/ai-signal@main",
-]
+PROJECT_SLUG = "consumer-signal"
+FEED_PROFILE = "consumer_electronics"
+BASE_URLS_ENV = "CONSUMER_SIGNAL_BASE_URLS"
+REPO_URL_ENV = "CONSUMER_SIGNAL_REPO_URL"
+# Consumer Signal deliberately has no baked-in central repository. Set either
+# CONSUMER_SIGNAL_BASE_URLS, CONSUMER_SIGNAL_REPO_URL, or config.feed_base_urls
+# after publishing your own consumer-signal repository.
+MIRROR_BASES = []
 PROMPT_FILES = [
     "summarize-podcast.md",
     "summarize-tweets.md",
@@ -54,7 +48,7 @@ PROMPT_FILES = [
     "translate.md",
 ]
 
-USER_DIR = Path.home() / ".ai-signal"
+USER_DIR = Path.home() / ".consumer-signal"
 CONFIG_PATH = USER_DIR / "config.json"
 SEEN_PATH = USER_DIR / "seen.json"
 DEFAULT_PAYLOAD_DIR = USER_DIR / "payload"
@@ -167,7 +161,7 @@ def build_output_contract(config):
         }
 
     return {
-        "role": "You are the user's Agent-side AI Signal digest writer.",
+        "role": "You are the user's Agent-side Consumer Signal digest writer.",
         "source_of_truth": "Use only the JSON fields in this payload. Do not browse the web or call external APIs.",
         "language": language_policy,
         "granularity": granularity,
@@ -181,7 +175,21 @@ def build_output_contract(config):
             "missing_value": "Show the time as unverified; never infer it from feed or discovery time.",
         },
         "content_rules": [
-            "Select only AI/product/research/infrastructure/investing-relevant items.",
+            (
+                "Organize selected items by substance, not by company or source: "
+                "(1) terminal product R&D, launches, availability and reception; "
+                "(2) supply chain, stocking, components and new technology; "
+                "(3) industry supply, demand, channels and market data; and "
+                "(4) emerging device categories and on-device AI. Omit an empty section."
+            ),
+            (
+                "Do not impose regional, brand, category, source-type, or section-count quotas. "
+                "Rank by importance, evidence strength, novelty, and explanatory value."
+            ),
+            (
+                "Label the evidence of every item as one of: 官方, 数据/研究, 报道/分析, "
+                "线索/传闻, or 评测/口碑. Keep early signals conditional and never present them as confirmed facts."
+            ),
             "Every included item must keep its original URL.",
             (
                 f"Every included X post, podcast, and paper must display its source timestamp in "
@@ -190,9 +198,8 @@ def build_output_contract(config):
                 "never substitute generated_at or first_seen."
             ),
             "For X/Twitter, keep each selected tweet as its own item and preserve the original text.",
-            "For the daily digest, use podcast metadata and description only; fetch a transcript only after an explicit expansion request.",
-            "For papers, keep title, arXiv link, and a short summary.",
-            "For official blog articles, keep source name, title, link, and a short summary of what was announced.",
+            "For each web article, keep source name, source time, title, link, and a concise explanation of what changed and why it matters.",
+            "For each X item, retain the original URL and distinguish direct disclosure, reporting, opinion, and rumor.",
             "Do not fabricate quotes, numbers, claims, or source details.",
             "Use local feedback_summary as a soft ranking preference, never as permission to hide critical official announcements.",
         ],
@@ -319,6 +326,7 @@ HTTP_TIMEOUT = httpx.Timeout(20.0, connect=5.0)
 # Once a base succeeds, later fetches try it first instead of re-walking
 # the mirror list from a base that already failed once.
 _preferred_base = None
+_configured_bases = []
 
 
 def fetch_json(url):
@@ -340,12 +348,36 @@ def fetch_text(url):
         return None
 
 
-def candidate_bases():
-    env = os.environ.get("AI_SIGNAL_BASE_URLS")
-    if env:
-        bases = [b.strip().rstrip("/") for b in env.split(",") if b.strip()]
+def normalize_bases(value):
+    if isinstance(value, str):
+        values = value.split(",")
+    elif isinstance(value, list):
+        values = value
     else:
-        bases = []
+        values = []
+    return [str(base).strip().rstrip("/") for base in values if str(base).strip()]
+
+
+def raw_base_from_repo(repo_url):
+    """Turn a GitHub repository URL into its raw main-branch URL when possible."""
+    value = str(repo_url or "").strip().rstrip("/")
+    value = re.sub(r"\.git$", "", value)
+    match = re.search(r"github\.com[/:]([^/\s]+)/([^/\s]+)$", value)
+    if not match:
+        return ""
+    return f"https://raw.githubusercontent.com/{match.group(1)}/{match.group(2)}/main"
+
+
+def configure_feed_bases(config):
+    global _configured_bases
+    _configured_bases = normalize_bases((config or {}).get("feed_base_urls"))
+
+
+def candidate_bases():
+    bases = normalize_bases(os.environ.get(BASE_URLS_ENV))
+    if not bases:
+        configured_repo = raw_base_from_repo(os.environ.get(REPO_URL_ENV))
+        bases = [configured_repo] if configured_repo else list(_configured_bases)
     if not bases:
         bases = list(MIRROR_BASES)
     if _preferred_base in bases:
@@ -363,7 +395,8 @@ def fetch_json_any(path):
         if data is not None:
             _preferred_base = base
             return data, url
-    return None, f"{candidate_bases()[0]}/{path}"
+    bases = candidate_bases()
+    return None, f"{bases[0]}/{path}" if bases else ""
 
 
 def fetch_text_any(path):
@@ -397,6 +430,11 @@ def load_local_text(path_text):
         return None
 
 
+def is_compatible_feed(feed):
+    """Reject cached feeds produced by the upstream, AI-focused profile."""
+    return bool(feed) and feed.get("profile") == FEED_PROFILE
+
+
 def feed_meta(filename, url, source, feed, reason=None):
     return {
         "source": source,
@@ -410,14 +448,19 @@ def feed_meta(filename, url, source, feed, reason=None):
 def fetch_feed(filename, content_key=None):
     remote, url = fetch_json_any(f"feeds/{filename}")
     local = load_local_json(filename)
-    if remote and (not content_key or remote.get(content_key)):
+    remote_compatible = is_compatible_feed(remote)
+    local_compatible = is_compatible_feed(local)
+    if remote_compatible and (not content_key or remote.get(content_key) is not None):
         return remote, feed_meta(filename, url, "remote", remote)
-    if local:
+    if local_compatible:
         reason = "remote_unavailable"
-        if remote and content_key and not remote.get(content_key):
+        if remote and not remote_compatible:
+            reason = "remote_profile_mismatch"
+        elif remote and content_key and remote.get(content_key) is None:
             reason = f"remote_missing_{content_key}"
         return local, feed_meta(filename, url, "local_cache", local, reason)
-    return remote, feed_meta(filename, url, "unavailable", remote, "remote_unavailable_no_local_cache")
+    reason = "remote_or_local_profile_mismatch" if remote or local else "remote_unavailable_no_local_cache"
+    return None, feed_meta(filename, url, "unavailable", None, reason)
 
 
 def choose_summary_profile(config):
@@ -513,10 +556,10 @@ def annotate_feed_sources(feed_sources, feeds):
 def filter_summary_items(items, domains):
     if not domains:
         return items
-    return [item for item in items if item.get("domain", "ai") in domains]
+    return [item for item in items if item.get("domain", "consumer_electronics") in domains]
 
 
-def current_content_ids(x_accounts, episodes, papers):
+def current_content_ids(x_accounts, episodes, papers, articles):
     tweet_ids = {
         str(tweet.get("id"))
         for account in x_accounts
@@ -541,12 +584,18 @@ def current_content_ids(x_accounts, episodes, papers):
         for paper in papers
         if paper.get("arxiv_id")
     }
+    article_ids = {
+        str(article.get("id") or article.get("url") or "")
+        for article in articles
+        if article.get("id") or article.get("url")
+    }
     return {
         "tweets": tweet_ids,
         "episode_keys": episode_keys,
         "episode_urls": episode_urls,
         "episode_titles": episode_titles,
         "papers": paper_ids,
+        "articles": article_ids,
     }
 
 
@@ -570,6 +619,11 @@ def filter_summary_items_for_current(items, kind, ids):
             item for item in items
             if str(item.get("arxiv_id") or item.get("id") or "") in ids["papers"]
         ]
+    if kind == "articles":
+        return [
+            item for item in items
+            if str(item.get("id") or item.get("source_url") or "") in ids["articles"]
+        ]
     return items
 
 
@@ -590,7 +644,7 @@ def main():
     configure_stdio()
     parser = argparse.ArgumentParser()
     parser.add_argument("--out", type=str, default=str(DEFAULT_PAYLOAD_DIR),
-                        help="Directory for payload.json and transcripts/ (default ~/.ai-signal/payload)")
+                        help="Directory for payload.json and transcripts/ (default ~/.consumer-signal/payload)")
     parser.add_argument("--include-seen", action="store_true",
                         help="Include items already delivered before (regenerate today's digest)")
     parser.add_argument("--mark-seen", action="store_true",
@@ -607,6 +661,7 @@ def main():
             config = json.loads(CONFIG_PATH.read_text("utf-8-sig"))
         except Exception as e:
             errors.append(f"Config read error: {e}")
+    configure_feed_bases(config)
 
     # 2. Fetch feeds
     feed_x, x_source = fetch_feed("feed-x.json", "x")
@@ -618,7 +673,7 @@ def main():
         feed_summaries, summaries_source = fetch_feed("feed-summaries.json", "profiles")
     else:
         feed_summaries = None
-        summaries_source = feed_meta("feed-summaries.json", f"{RAW_BASE}/feeds/feed-summaries.json", "disabled", None)
+        summaries_source = feed_meta("feed-summaries.json", "", "disabled", None)
     feed_sources, source_warnings = annotate_feed_sources(
         {
             "x": x_source,
@@ -636,7 +691,7 @@ def main():
         },
     )
     warnings.extend(source_warnings)
-    if feed_summaries and summaries_are_stale(feed_summaries, feed_x, feed_podcasts, feed_arxiv):
+    if feed_summaries and summaries_are_stale(feed_summaries, feed_x, feed_blogs):
         warnings.append(
             "Central summaries are older than raw feeds; ignoring feed-summaries.json for this run"
         )
@@ -646,9 +701,9 @@ def main():
     if not feed_x:
         errors.append("Could not fetch tweet feed")
     if not feed_podcasts:
-        errors.append("Could not fetch podcast feed")
+        warnings.append("Podcast feed unavailable; podcasts are optional and disabled in the default Consumer Signal profile")
     if not feed_arxiv:
-        errors.append("Could not fetch arXiv feed")
+        warnings.append("Research feed unavailable; arXiv is disabled in the default Consumer Signal profile")
     if not feed_blogs:
         # Newer feed: older central snapshots/mirror caches may not have it yet
         warnings.append("Could not fetch official blog feed; skipping blog articles this run")
@@ -695,7 +750,7 @@ def main():
 
     # 5. Build output
     language = normalize_language(config.get("language", "en"))
-    domains = config.get("domains", ["ai", "invest"])
+    domains = config.get("domains", ["consumer_electronics"])
     summary_profile = choose_summary_profile(config)
     available_summary_profiles = sorted(((feed_summaries or {}).get("profiles") or {}).keys())
     selected_summary = ((feed_summaries or {}).get("profiles") or {}).get(summary_profile)
@@ -707,7 +762,7 @@ def main():
 
     central_summaries = None
     if selected_summary:
-        ids = current_content_ids(x_accounts, episodes, papers)
+        ids = current_content_ids(x_accounts, episodes, papers, articles)
         summary_x = filter_summary_items_for_current(
             filter_summary_items(selected_summary.get("x", []), domains),
             "x",
@@ -723,6 +778,11 @@ def main():
             "papers",
             ids,
         )
+        summary_articles = filter_summary_items_for_current(
+            filter_summary_items(selected_summary.get("articles", []), domains),
+            "articles",
+            ids,
+        )
         central_summaries = {
             "profile": summary_profile,
             "available_profiles": available_summary_profiles,
@@ -731,6 +791,7 @@ def main():
             "x": attach_summary_text(summary_x),
             "podcasts": attach_summary_text(summary_podcasts),
             "papers": attach_summary_text(summary_papers),
+            "articles": attach_summary_text(summary_articles),
         }
 
     stats = {
@@ -739,6 +800,7 @@ def main():
         "central_x_summaries": len((central_summaries or {}).get("x", [])),
         "central_podcast_summaries": len((central_summaries or {}).get("podcasts", [])),
         "central_paper_summaries": len((central_summaries or {}).get("papers", [])),
+        "central_article_summaries": len((central_summaries or {}).get("articles", [])),
         "x_builders": len(x_accounts),
         "total_tweets": sum(len(a.get("tweets", [])) for a in x_accounts),
         "arxiv_papers": len(papers),

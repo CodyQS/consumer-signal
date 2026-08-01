@@ -1,444 +1,485 @@
 {
+  "filtering": {
+    "profile": "consumer_electronics",
+    "config_path": "filter-terms.consumer-electronics.json",
+    "apply_to": ["twitter", "blogs", "podcasts", "arxiv"],
+    "notes": "Every active raw source shares the Consumer Signal relevance rule. Paid, login-only and unverified sources remain in source-catalog.consumer-electronics.json until they have a public, policy-compliant adapter."
+  },
   "twitter": {
+    "enabled": true,
     "lookback_hours": 48,
-    "max_tweets_per_user": 5,
-    "min_engagement": 10,
+    "max_tweets_per_user": null,
+    "min_engagement": null,
     "include_replies": false,
     "accounts": [
       {
-        "handle": "karpathy",
-        "name": "Andrej Karpathy",
-        "domain": "ai",
-        "tier": "analyst"
+        "handle": "DSCCRoss",
+        "name": "Ross Young / DSCC",
+        "domain": "consumer_electronics",
+        "tier": "supply_chain",
+        "region": "global",
+        "evidence_class": "early_signal",
+        "source_layer": "supply_chain_reporting"
       },
       {
-        "handle": "swyx",
-        "name": "Swyx (Shawn Wang)",
-        "domain": "ai",
-        "tier": "analyst"
+        "handle": "benthompson",
+        "name": "Ben Thompson / Stratechery",
+        "domain": "consumer_electronics",
+        "tier": "analyst",
+        "region": "global",
+        "evidence_class": "industry_reporting",
+        "source_layer": "platform_business"
       },
       {
-        "handle": "dylan522p",
-        "name": "Dylan Patel (SemiAnalysis)",
-        "domain": "ai",
-        "tier": "analyst"
+        "handle": "mims",
+        "name": "Christopher Mims / WSJ",
+        "domain": "consumer_electronics",
+        "tier": "reporter",
+        "region": "global",
+        "evidence_class": "industry_reporting",
+        "source_layer": "market_commentary"
       },
       {
-        "handle": "insane_analyst",
-        "name": "Irrational Analysis",
-        "domain": "ai",
-        "tier": "analyst"
+        "handle": "CaseyNewton",
+        "name": "Casey Newton / Platformer",
+        "domain": "consumer_electronics",
+        "tier": "analyst",
+        "region": "global",
+        "evidence_class": "industry_reporting",
+        "source_layer": "platform_business"
       },
       {
-        "handle": "naval",
-        "name": "Naval Ravikant",
-        "domain": "ai",
-        "tier": "analyst"
+        "handle": "verge",
+        "name": "The Verge",
+        "domain": "consumer_electronics",
+        "tier": "media",
+        "region": "global",
+        "evidence_class": "review_feedback",
+        "source_layer": "reviews"
       },
       {
-        "handle": "leopoldasch",
-        "name": "Leopold Aschenbrenner",
-        "domain": "ai",
-        "tier": "analyst"
+        "handle": "MKBHD",
+        "name": "Marques Brownlee / MKBHD",
+        "domain": "consumer_electronics",
+        "tier": "reviewer",
+        "region": "global",
+        "evidence_class": "review_feedback",
+        "source_layer": "creator_feedback"
       },
       {
-        "handle": "jimkxa",
-        "name": "Jim Keller",
-        "domain": "ai",
-        "tier": "analyst"
+        "handle": "markgurman",
+        "name": "Mark Gurman / Bloomberg Power On",
+        "domain": "consumer_electronics",
+        "tier": "reporter",
+        "region": "global",
+        "evidence_class": "early_signal",
+        "source_layer": "product_rumors"
       },
       {
-        "handle": "sama",
-        "name": "Sam Altman",
-        "domain": "ai",
-        "tier": "exec"
+        "handle": "evleaks",
+        "name": "Evan Blass / evleaks",
+        "domain": "consumer_electronics",
+        "tier": "leaker",
+        "region": "global",
+        "evidence_class": "early_signal",
+        "source_layer": "product_rumors"
       },
       {
-        "handle": "DarioAmodei",
-        "name": "Dario Amodei",
-        "domain": "ai",
-        "tier": "exec"
+        "handle": "jon_prosser",
+        "name": "Jon Prosser / Front Page Tech",
+        "domain": "consumer_electronics",
+        "tier": "leaker",
+        "region": "global",
+        "evidence_class": "early_signal",
+        "source_layer": "product_rumors"
       },
       {
-        "handle": "demishassabis",
-        "name": "Demis Hassabis (Google DeepMind)",
-        "domain": "ai",
-        "tier": "exec"
+        "handle": "VNchocoTaco",
+        "name": "ShrimpApplePro",
+        "domain": "consumer_electronics",
+        "tier": "leaker",
+        "region": "global",
+        "evidence_class": "early_signal",
+        "source_layer": "product_rumors"
       },
       {
-        "handle": "jietang",
-        "name": "Tang Jie (Z.ai / Tsinghua)",
-        "domain": "ai",
-        "tier": "exec"
+        "handle": "PatrickKennedyIT",
+        "name": "Patrick Kennedy IT",
+        "domain": "consumer_electronics",
+        "tier": "analyst",
+        "region": "global",
+        "evidence_class": "early_signal",
+        "source_layer": "product_rumors"
       },
       {
-        "handle": "nvidia",
-        "name": "NVIDIA (Jensen Huang / AI infrastructure)",
-        "domain": "ai",
-        "tier": "infra"
+        "handle": "frontpagetech",
+        "name": "Front Page Tech",
+        "domain": "consumer_electronics",
+        "tier": "leaker",
+        "region": "global",
+        "evidence_class": "early_signal",
+        "source_layer": "product_rumors"
       },
       {
-        "handle": "AmandaAskell",
-        "name": "Amanda Askell (Anthropic)",
-        "domain": "ai",
-        "tier": "builder"
+        "handle": "aaronp613",
+        "name": "Aaron p613",
+        "domain": "consumer_electronics",
+        "tier": "leaker",
+        "region": "global",
+        "evidence_class": "early_signal",
+        "source_layer": "product_rumors"
       },
       {
-        "handle": "bcherny",
-        "name": "Boris Cherny (Claude Code)",
-        "domain": "ai",
-        "tier": "builder"
+        "handle": "reneritchie",
+        "name": "Rene Ritchie",
+        "domain": "consumer_electronics",
+        "tier": "reviewer",
+        "region": "global",
+        "evidence_class": "review_feedback",
+        "source_layer": "creator_feedback"
       },
       {
-        "handle": "_catwu",
-        "name": "Cat Wu (Anthropic)",
-        "domain": "ai",
-        "tier": "builder"
-      },
-      {
-        "handle": "alexalbert__",
-        "name": "Alex Albert (Anthropic)",
-        "domain": "ai",
-        "tier": "builder"
-      },
-      {
-        "handle": "rauchg",
-        "name": "Guillermo Rauch (Vercel)",
-        "domain": "ai",
-        "tier": "builder"
-      },
-      {
-        "handle": "joshwoodward",
-        "name": "Josh Woodward (Google Labs)",
-        "domain": "ai",
-        "tier": "builder"
+        "handle": "bindureddy",
+        "name": "Bindu Reddy",
+        "domain": "consumer_electronics",
+        "tier": "analyst",
+        "region": "global",
+        "evidence_class": "industry_reporting",
+        "source_layer": "ai_terminal"
       }
     ]
   },
   "podcasts": {
+    "enabled": false,
     "lookback_hours": 72,
     "transcription": {
       "provider": "volc_asr_auc",
-      "enabled_by_default": true,
-      "default_limit": 2,
+      "enabled_by_default": false,
+      "default_limit": 0,
       "poll_interval_seconds": 10,
       "max_wait_seconds": 1800,
-      "relevance_keywords": [
-        "ai",
-        "artificial intelligence",
-        "agent",
-        "agents",
-        "llm",
-        "model",
-        "openai",
-        "anthropic",
-        "google deepmind",
-        "deepmind",
-        "nvidia",
-        "semiconductor",
-        "gpu",
-        "inference",
-        "data center",
-        "datacenter",
-        "robotics",
-        "automation"
-      ]
+      "relevance_keywords": []
     },
     "people": {
       "lookback_hours": 168,
       "search_recency": "week",
       "max_results_per_search": 3,
-      "max_new_per_run": 5,
+      "max_new_per_run": 0,
       "min_duration_minutes": 15,
       "min_channel_subscribers": 50000,
-      "searches": [
-        {
-          "person": "Sundar Pichai",
-          "query": "Sundar Pichai interview",
-          "domain": "ai"
-        },
-        {
-          "person": "Greg Brockman",
-          "query": "Greg Brockman interview",
-          "domain": "ai"
-        },
-        {
-          "person": "Sam Altman",
-          "query": "Sam Altman interview",
-          "domain": "ai"
-        },
-        {
-          "person": "Dario Amodei",
-          "query": "Dario Amodei interview",
-          "domain": "ai"
-        },
-        {
-          "person": "Demis Hassabis",
-          "query": "Demis Hassabis interview",
-          "domain": "ai"
-        },
-        {
-          "person": "Jensen Huang",
-          "query": "Jensen Huang interview",
-          "domain": "ai"
-        },
-        {
-          "person": "Satya Nadella",
-          "query": "Satya Nadella AI interview",
-          "domain": "ai"
-        },
-        {
-          "person": "Mark Zuckerberg",
-          "query": "Mark Zuckerberg AI interview",
-          "domain": "ai"
-        },
-        {
-          "person": "Daniela Amodei",
-          "query": "Daniela Amodei Anthropic interview",
-          "domain": "ai"
-        },
-        {
-          "person": "Krishna Rao",
-          "query": "Krishna Rao Anthropic CFO interview",
-          "domain": "ai"
-        },
-        {
-          "person": "Mike Krieger",
-          "query": "Mike Krieger Anthropic interview",
-          "domain": "ai"
-        },
-        {
-          "person": "Sholto Douglas",
-          "query": "Sholto Douglas Anthropic interview",
-          "domain": "ai"
-        },
-        {
-          "person": "Amanda Askell",
-          "query": "Amanda Askell Anthropic interview",
-          "domain": "ai"
-        },
-        {
-          "person": "Boris Cherny",
-          "query": "Boris Cherny Claude Code interview",
-          "domain": "ai"
-        },
-        {
-          "person": "Cat Wu",
-          "query": "Cat Wu Anthropic Claude Code interview",
-          "domain": "ai"
-        },
-        {
-          "person": "Alex Albert",
-          "query": "Alex Albert Anthropic Claude interview",
-          "domain": "ai"
-        },
-        {
-          "person": "Kevin Weil",
-          "query": "Kevin Weil OpenAI interview",
-          "domain": "ai"
-        },
-        {
-          "person": "Ivan Zhao",
-          "query": "Ivan Zhao Notion interview",
-          "domain": "ai"
-        },
-        {
-          "person": "Dylan Patel",
-          "query": "Dylan Patel SemiAnalysis interview",
-          "domain": "ai"
-        },
-        {
-          "person": "Gavin Baker",
-          "query": "Gavin Baker AI interview",
-          "domain": "invest"
-        },
-        {
-          "person": "Naval Ravikant",
-          "query": "Naval Ravikant AI interview",
-          "domain": "ai"
-        },
-        {
-          "person": "闫俊杰",
-          "query": "闫俊杰 MiniMax 访谈",
-          "domain": "ai",
-          "region": "cn"
-        },
-        {
-          "person": "杨植麟",
-          "query": "杨植麟 Kimi Moonshot 访谈",
-          "domain": "ai",
-          "region": "cn"
-        },
-        {
-          "person": "梁文锋",
-          "query": "梁文锋 DeepSeek 访谈",
-          "domain": "ai",
-          "region": "cn"
-        },
-        {
-          "person": "唐杰",
-          "query": "唐杰 智谱AI 访谈",
-          "domain": "ai",
-          "region": "cn"
-        },
-        {
-          "person": "罗福莉",
-          "query": "罗福莉 大模型 访谈",
-          "domain": "ai",
-          "region": "cn"
-        },
-        {
-          "person": "李广密",
-          "query": "李广密 拾象 访谈",
-          "domain": "ai",
-          "region": "cn"
-        },
-        {
-          "person": "肖弘",
-          "query": "肖弘 Manus 访谈",
-          "domain": "ai",
-          "region": "cn"
-        }
-      ]
+      "searches": []
     },
-    "channels": [
-      {
-        "name": "Dwarkesh Patel",
-        "domain": "ai",
-        "rss_url": "https://www.dwarkesh.com/feed"
-      },
-      {
-        "name": "Lex Fridman",
-        "domain": "ai",
-        "rss_url": "https://lexfridman.com/feed/podcast/"
-      },
-      {
-        "name": "Latent Space",
-        "domain": "ai",
-        "rss_url": "https://www.latent.space/feed",
-        "fallback_rss_urls": [
-          "https://api.substack.com/feed/podcast/1084089.rss"
-        ],
-        "transcribe_missing": true
-      },
-      {
-        "name": "All-In Podcast",
-        "domain": "ai",
-        "rss_url": "https://rss.libsyn.com/shows/254861/destinations/1928300.xml",
-        "needs_filter": true,
-        "transcribe_missing": "relevant"
-      },
-      {
-        "name": "a16z",
-        "domain": "ai",
-        "rss_url": "https://feeds.simplecast.com/JGE3yC0V"
-      },
-      {
-        "name": "Naval",
-        "domain": "ai",
-        "rss_url": "https://nav.al/feed",
-        "lookback_hours": 336,
-        "transcribe_missing": true
-      },
-      {
-        "name": "No Priors",
-        "domain": "ai",
-        "rss_url": "https://feeds.megaphone.fm/nopriors"
-      },
-      {
-        "name": "Google DeepMind Podcast",
-        "domain": "ai",
-        "rss_url": "https://feeds.simplecast.com/JT6pbPkg"
-      },
-      {
-        "name": "SemiAnalysis",
-        "domain": "ai",
-        "rss_url": "https://anchor.fm/s/10fbee758/podcast/rss",
-        "transcript_rss_url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCf_KhBXw5TIV0A7butjgFhg",
-        "lookback_hours": 336,
-        "transcribe_missing": false,
-        "require_direct_audio": true,
-        "min_transcription_duration_minutes": 10,
-        "min_transcription_audio_bytes": 5000000
-      },
-      {
-        "name": "Lightcone Podcast",
-        "domain": "ai",
-        "rss_url": "https://anchor.fm/s/f58d3330/podcast/rss"
-      },
-      {
-        "name": "Lenny's Podcast",
-        "domain": "ai",
-        "rss_url": "https://www.lennysnewsletter.com/feed",
-        "fallback_rss_urls": [
-          "https://api.substack.com/feed/podcast/10845.rss"
-        ],
-        "transcribe_missing": true
-      },
-      {
-        "name": "Invest Like the Best",
-        "domain": "invest",
-        "rss_url": "https://feeds.megaphone.fm/CLS2859450455",
-        "needs_filter": true,
-        "transcribe_missing": "relevant"
-      },
-      {
-        "name": "Capital Allocators",
-        "domain": "invest",
-        "rss_url": "https://rss.libsyn.com/shows/94820/destinations/482814.xml"
-      },
-      {
-        "name": "The Acquirers Podcast",
-        "domain": "invest",
-        "rss_url": "https://anchor.fm/s/9603714/podcast/rss"
-      }
-    ]
+    "channels": []
   },
   "arxiv": {
+    "enabled": false,
     "lookback_hours": 120,
-    "max_papers": 30,
-    "categories": [
-      {
-        "id": "cs.AI",
-        "name": "Artificial Intelligence"
-      },
-      {
-        "id": "cs.CL",
-        "name": "Computation and Language"
-      },
-      {
-        "id": "cs.LG",
-        "name": "Machine Learning"
-      }
-    ]
+    "max_papers": 0,
+    "categories": []
   },
   "blogs": {
+    "enabled": true,
     "lookback_hours": 48,
-    "max_per_source": 5,
+    "max_per_source": null,
     "sources": [
       {
-        "id": "anthropic",
-        "name": "Anthropic",
-        "type": "sitemap",
-        "url": "https://www.anthropic.com/sitemap.xml",
-        "include_prefixes": [
-          "https://www.anthropic.com/news/",
-          "https://www.anthropic.com/engineering/",
-          "https://www.anthropic.com/research/"
-        ]
+        "id": "apple_newsroom",
+        "name": "Apple Newsroom",
+        "type": "rss",
+        "url": "https://www.apple.com/ca/newsroom/rss-feed.rss",
+        "domain": "consumer_electronics",
+        "region": "global",
+        "evidence_class": "primary_disclosure",
+        "source_layer": "official_brand"
       },
       {
-        "id": "openai",
-        "name": "OpenAI",
+        "id": "samsung_global_newsroom",
+        "name": "Samsung Global Newsroom",
         "type": "rss",
-        "url": "https://openai.com/news/rss.xml"
+        "url": "https://news.samsung.com/global/feed",
+        "domain": "consumer_electronics",
+        "region": "global",
+        "evidence_class": "primary_disclosure",
+        "source_layer": "official_brand",
+        "notes": "Samsung Electronics 官方全球 Newsroom RSS；共同过滤规则保留 Galaxy、可穿戴、显示、存储及端侧 AI 的产品和业务披露。"
       },
       {
-        "id": "deepmind",
-        "name": "Google DeepMind",
+        "id": "google_devices_blog",
+        "name": "Google Blog: Devices",
+        "type": "google_devices_listing",
+        "url": "https://blog.google/products-and-platforms/devices/",
+        "domain": "consumer_electronics",
+        "region": "global",
+        "evidence_class": "primary_disclosure",
+        "source_layer": "official_brand",
+        "priority_keywords": ["pixel", "fitbit", "google nest", "google home", "pixel watch", "pixel tablet", "tensor"],
+        "notes": "Google 官方 Devices 分类页的公开卡片；解析其中的官网文章链接和发布时间，覆盖 Pixel、Fitbit、Nest、Google Home 与 Tensor 终端信息。"
+      },
+      {
+        "id": "meta_newsroom_devices",
+        "name": "Meta Newsroom (Quest / AI Glasses)",
         "type": "rss",
-        "url": "https://deepmind.google/blog/rss.xml"
-      }
-    ]
-  }
+        "url": "https://about.fb.com/news/feed/",
+        "domain": "consumer_electronics",
+        "region": "global",
+        "evidence_class": "primary_disclosure",
+        "source_layer": "official_brand",
+        "priority_keywords": ["meta quest", "ray-ban meta", "oakley meta", "meta glasses", "ai glasses", "smart glasses"],
+        "exclude_keywords": ["data center", "election", "political", "integrity", "misinformation", "content moderation"],
+        "notes": "Meta 官方 Newsroom RSS 覆盖 Quest、Ray-Ban Meta/Oakley Meta 与 AI 眼镜；共同过滤规则和来源级排除词剔除平台政策、选举与数据中心内容。"
+      },
+      {
+        "id": "huawei_updates",
+        "name": "Huawei Updates",
+        "type": "rss",
+        "url": "https://www.huawei.com/en/rss-feeds/huawei-updates/rss",
+        "domain": "consumer_electronics",
+        "region": "china",
+        "evidence_class": "primary_disclosure",
+        "source_layer": "official_brand",
+        "notes": "The shared filter removes non-consumer material where the article text provides sufficient context; a dedicated Huawei Consumer feed is still preferred when available."
+      },
+      {
+        "id": "xiaomi_global_discover",
+        "name": "Xiaomi Global Discover / Newsroom",
+        "type": "xiaomi_listing",
+        "url": "https://www.mi.com/global/discover/",
+        "api_url": "https://sgp-api.buy.mi.com/global/search/v1/api/materials",
+        "api_params": {
+          "from": "pc"
+        },
+        "article_url_template": "https://www.mi.com/global/discover/article?id={material_id}",
+        "material_types": ["newsroom"],
+        "domain": "consumer_electronics",
+        "region": "china",
+        "evidence_class": "primary_disclosure",
+        "source_layer": "official_brand",
+        "exclude_keywords": ["xiaomi ev", "skynomad", "automotive", "vehicle", "suv"],
+        "notes": "Xiaomi Global Discover 的官网公开目录接口；抓取正式 Newsroom 公告并按时间窗口自动翻页。来源级排除小米汽车主题。"
+      },
+      {
+        "id": "oppo_newsroom",
+        "name": "OPPO Global Press Releases",
+        "type": "oppo_listing",
+        "url": "https://www.oppo.com/en/newsroom/press/",
+        "api_url": "https://opsiteapi-sg.oppo.com/api/public/v1/page/query",
+        "api_payload": {
+          "region": "en",
+          "customCategory": "cmsNewsDetail",
+          "customCategoryType": "newsroom_press",
+          "pageSize": 20,
+          "pageIndex": 1,
+          "env": 1
+        },
+        "domain": "consumer_electronics",
+        "region": "china",
+        "evidence_class": "primary_disclosure",
+        "source_layer": "official_brand",
+        "notes": "OPPO 官方 Press Releases 列表使用网站公开、无需登录的查询接口；仅保留标题、发布日期、摘要和 OPPO 原文链接。"
+      },
+      {
+        "id": "vivo_newsroom",
+        "name": "vivo Global Newsroom",
+        "type": "vivo_listing",
+        "url": "https://www.vivo.com/en/about-vivo/news",
+        "domain": "consumer_electronics",
+        "region": "china",
+        "evidence_class": "primary_disclosure",
+        "source_layer": "official_brand",
+        "notes": "vivo 官方 News Room 为服务端直出列表；解析正式新闻卡片中的发布日期和原文链接。"
+      },
+      {
+        "id": "mediatek_press_room",
+        "name": "MediaTek Press Room",
+        "type": "mediatek_listing",
+        "url": "https://www.mediatek.com/press-room",
+        "domain": "consumer_electronics",
+        "region": "taiwan_asia",
+        "evidence_class": "primary_disclosure",
+        "source_layer": "component_supplier",
+        "exclude_keywords": ["automotive", "vehicle", "cockpit", "data center", "data-center", "cloud gaming"],
+        "notes": "MediaTek 官网公开 Press Room；覆盖 Dimensity、Kompanio、智能电视、Wi-Fi、端侧 AI 等终端芯片与技术披露。来源级排除汽车、数据中心和云游戏网络主题。"
+      },
+      {
+        "id": "qualcomm_releases",
+        "name": "Qualcomm Press Announcements",
+        "type": "qualcomm_listing",
+        "url": "https://www.qualcomm.com/news/releases",
+        "graphql_url": "https://prdgraphql.www.qualcomm.com/graphql",
+        "page_size": 24,
+        "resource_subtypes": ["press_release", "press_note"],
+        "domain": "consumer_electronics",
+        "region": "global",
+        "evidence_class": "primary_disclosure",
+        "source_layer": "component_supplier",
+        "exclude_keywords": ["automotive", "automated driving", "digital cockpit", "vehicle", "nascar", "cash dividend", "conference call", "data center", "dragonfly"],
+        "priority_keywords": ["snapdragon", "mobile platform", "pc platform", "ai pc", "intelligent eyewear", "spatial computing", "wearable", "wearables", "quarterly results", "fiscal results", "fiscal", "guidance"],
+        "notes": "Qualcomm 官网 Releases 页面使用的公开 GraphQL 新闻目录；按发布时间分页抓取 Snapdragon、PC、XR、穿戴及品牌合作等正式公告，并排除汽车、数据中心和纯财务日程主题。"
+      },
+      {
+        "id": "cninfo_consumer_supply_chain",
+        "name": "巨潮资讯：消费电子供应链法定披露",
+        "type": "cninfo_listing",
+        "url": "https://www.cninfo.com.cn/new/fulltextSearch/full",
+        "companies": ["立讯精密", "歌尔股份", "京东方", "蓝思科技", "华勤技术", "闻泰科技", "韦尔股份", "兆易创新", "汇顶科技", "领益智造", "鹏鼎控股", "东山精密", "深天马", "水晶光电", "视源股份", "欧菲光", "长盈精密", "环旭电子", "欣旺达", "德赛电池", "瑞芯微", "全志科技", "顺络电子", "生益科技", "传音控股", "安克创新"],
+        "page_size": 30,
+        "domain": "consumer_electronics",
+        "region": "china",
+        "evidence_class": "primary_disclosure",
+        "source_layer": "component_supplier",
+        "exclude_keywords": ["股东大会", "董事会", "监事会", "独立董事", "股权激励", "股票期权", "行权", "薪酬", "减持", "回购", "担保", "诉讼", "章程", "募集资金", "可转换", "可转债", "选举", "聘任", "离任", "补选", "内部控制", "律师事务所", "法律意见书", "境外上市", "h股", "登记股东", "非登记股东", "公司通讯", "回条", "电子方式发布"],
+        "notes": "巨潮资讯公开标题检索，覆盖配置中的消费电子零部件、ODM、显示、光学、SoC、电池、被动元件、PCB 材料与中国品牌公司。保留法定披露标题、时间及巨潮官方 PDF 链接；不下载或解析公告全文。"
+      },
+      {
+        "id": "economic_daily_industry",
+        "name": "经济日报（台湾）产业",
+        "type": "json_ld_listing",
+        "url": "https://money.udn.com/money/cate/5591",
+        "domain": "consumer_electronics",
+        "region": "taiwan_asia",
+        "evidence_class": "industry_reporting",
+        "source_layer": "supply_chain_reporting",
+        "notes": "公开产业列表页的 JSON-LD；仅保留命中消费电子对象与供需/产品信号的文章。"
+      },
+      {
+        "id": "ming_chi_kuo",
+        "name": "郭明錤 / Ming-Chi Kuo",
+        "type": "rss",
+        "url": "https://medium.com/feed/@mingchikuo",
+        "domain": "consumer_electronics",
+        "region": "taiwan_asia",
+        "evidence_class": "early_signal",
+        "source_layer": "supply_chain_analyst",
+        "exclude_keywords": ["股价", "股價", "stock price", "price target", "估值"],
+        "notes": "郭明錤公开 Medium RSS。供应商、备货、产能和新品预测均按分析师线索呈现；过滤掉单纯股价与估值评论。"
+      },
+      {
+        "id": "digitimes",
+        "name": "DigiTimes（电子时报）",
+        "type": "rss",
+        "url": "https://www.digitimes.com/rss/daily.xml",
+        "domain": "consumer_electronics",
+        "region": "taiwan_asia",
+        "evidence_class": "industry_reporting",
+        "source_layer": "supply_chain_reporting",
+        "notes": "官方 daily RSS。供应商、产能、零部件和备货报道须按 DigiTimes 归因；共同过滤规则排除汽车、数据中心与泛 AI 主题。"
+      },
+      {
+        "id": "idc_consumer",
+        "name": "IDC Consumer",
+        "type": "rss",
+        "url": "https://my.idc.com/rss/rssconsumer.xml",
+        "domain": "consumer_electronics",
+        "region": "global",
+        "evidence_class": "market_data",
+        "source_layer": "market_data"
+      },
+      {
+        "id": "counterpoint_insights",
+        "name": "Counterpoint Research Insights",
+        "type": "counterpoint_listing",
+        "url": "https://counterpointresearch.com/en/insights",
+        "domain": "consumer_electronics",
+        "region": "global",
+        "evidence_class": "market_data",
+        "source_layer": "market_data",
+        "notes": "公开 Insights 列表页；保留智能手机、可穿戴、显示、终端零部件和市场供需相关的研究文章，不抓取受限研究门户内容。"
+      },
+      {
+        "id": "cinno_research",
+        "name": "CINNO Research",
+        "type": "cinno_listing",
+        "url": "https://www.cinno.com.cn/industry/insights",
+        "fetch_article_summary": true,
+        "domain": "consumer_electronics",
+        "region": "china",
+        "evidence_class": "market_data",
+        "source_layer": "market_data",
+        "notes": "公开行业洞察列表页；覆盖手机、面板、XR、电子纸、电视等终端与上游供需。仅保留命中共同消费电子过滤规则的公开文章。"
+      },
+      {
+        "id": "gsmarena",
+        "name": "GSMArena News and Reviews",
+        "type": "rss",
+        "url": "https://www.gsmarena.com/rss-news-reviews.php3",
+        "domain": "consumer_electronics",
+        "region": "global",
+        "evidence_class": "review_feedback",
+        "source_layer": "reviews"
+      },
+      {
+        "id": "the_verge",
+        "name": "The Verge",
+        "type": "rss",
+        "url": "https://www.theverge.com/rss/index.xml",
+        "domain": "consumer_electronics",
+        "region": "global",
+        "evidence_class": "review_feedback",
+        "source_layer": "reviews",
+        "exclude_keywords": ["best price", "deals", "deal", "save $", "discount", "coupon"],
+        "notes": "保留新品、评测与行业报道；来源级排除促销、折扣和优惠券文章。"
+      },
+      {
+        "id": "9to5mac",
+        "name": "9to5Mac",
+        "type": "rss",
+        "url": "https://9to5mac.com/feed/",
+        "domain": "consumer_electronics",
+        "region": "global",
+        "evidence_class": "industry_reporting",
+        "source_layer": "product_rumors",
+        "exclude_keywords": ["deals", "deal", "daily:", "podcast", "[poll]", "poll", "giveaway", "discount", "save $", "bargains", "best price", "how to", "shazam", "ariana grande", "snoopy", "final earnings call", "apple upgrade vs", "no surprises expected"],
+        "notes": "保留产品、供应链、出货与业务变化；来源级排除促销、日播、投票、教程、音乐贴纸、影视节目、人物致谢和无新事实的财报预告。"
+      },
+    {
+      "id": "macrumors",
+        "name": "MacRumors",
+        "type": "rss",
+        "url": "https://feeds.macrumors.com/MacRumors-All",
+        "domain": "consumer_electronics",
+        "region": "global",
+      "evidence_class": "industry_reporting",
+      "source_layer": "product_rumors",
+      "exclude_keywords": ["deals", "deal", "bargains", "the macrumors show", "podcast", "giveaway", "discount", "save $", "best price", "how to", "shazam", "ariana grande", "how apple changed under tim cook", "thanks shareholders"],
+      "notes": "保留新品、供应链与市场报道；来源级排除促销、节目、教程、音乐贴纸及无关的人物回顾。"
+    },
+    {
+      "id": "ifanr",
+      "name": "爱范儿",
+      "type": "rss",
+      "url": "https://www.ifanr.com/feed/",
+      "domain": "consumer_electronics",
+      "region": "china",
+      "evidence_class": "review_feedback",
+      "source_layer": "china_reviews",
+      "exclude_keywords": ["澎程", "理想", "问界", "小鹏", "蔚来", "比亚迪", "特斯拉", "极氪", "零跑"],
+      "notes": "公开全文 RSS；通过共同词表保留终端新品、体验、端侧 AI 与产业变化，并排除汽车和泛互联网内容。"
+    },
+    {
+      "id": "ifixit",
+      "name": "iFixit",
+      "type": "rss",
+      "url": "https://www.ifixit.com/News/rss",
+      "cookies": {"ntabt": "1"},
+      "domain": "consumer_electronics",
+      "region": "global",
+      "evidence_class": "review_feedback",
+      "source_layer": "teardowns",
+      "priority_keywords": ["teardown", "tear down", "disassembly", "repairability", "repair score", "repair scoring", "repair standard", "replaceable battery", "replaceable batteries", "parts availability"],
+      "notes": "公开 News RSS；仅将拆解、可维修性、可替换电池和零部件可得性等高价值条目作为来源级优先信号。ntabt 是网页初始响应设置的公开非登录 cookie。"
+    },
+    {
+      "id": "geekerwan",
+      "name": "极客湾 Geekerwan",
+      "type": "rss",
+      "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCeUJO1H3TEXu2syfAAPjYKQ",
+      "enabled": false,
+      "domain": "consumer_electronics",
+      "region": "china",
+      "evidence_class": "review_feedback",
+      "source_layer": "engineering_reviews",
+      "notes": "官方 YouTube Atom endpoint 在最近验证时返回 404，故暂停抓取而非在每日任务中持续报错。确认新的公开订阅接口后再启用；目标内容仍为 SoC、性能、功耗、续航、AI PC 与终端工程分析。"
+    }
+  ]
+}
 }

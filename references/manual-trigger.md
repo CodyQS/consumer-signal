@@ -1,8 +1,5 @@
-# Manual Trigger
+# 手动触发
 
-When the user invokes `/ai-signal` or asks for their digest:
-1. Skip cron — run immediately
-2. Same fetch → remix → deliver flow
-3. Tell the user you're fetching fresh content
-
----
+当用户输入 `/consumer-signal` 或请求当天消费电子日报时，运行
+`scripts/prepare_digest.py`，读取 payload，并按 `content-delivery-digest-run.md` 的四栏与证据规则
+写作。只在日报已展示或成功投递后标记 delivery mark。

@@ -1,34 +1,18 @@
-# Auto-Install (Zero Command Line)
+# 安装 Consumer Signal
 
-When a user asks you to install ai-signal (e.g. "帮我安装 https://github.com/Benboerba620/ai-signal"
-or "set up ai signal"), run these steps automatically — the user should NOT need
-to touch the terminal:
+Consumer Signal 不内置某个原项目的远程地址。安装前需要项目所有者给出已发布的
+`consumer-signal` 仓库 URL；把它保存为 `CONSUMER_SIGNAL_REPO_URL`。若用户没有该 URL，
+说明这是唯一需要其确认的信息，不要擅自克隆 `ai-signal`。
 
-1. Detect platform and choose install path:
-   - OpenClaw: `~/skills/ai-signal`
-   - Claude Code: `~/.claude/skills/ai-signal`
-   - Other: `~/ai-signal`
+在合适的技能目录安装完整仓库，例如：
 
-2. Clone and install:
 ```bash
-git clone https://github.com/Benboerba620/ai-signal.git <install_path>
-cd <install_path>/scripts && pip install -r ../requirements.txt
+git clone "$CONSUMER_SIGNAL_REPO_URL" ~/.claude/skills/consumer-signal
+python -m pip install -r ~/.claude/skills/consumer-signal/requirements.txt
 ```
 
-3. If clone or install fails, diagnose and retry (missing git? missing pip?
-   network issue?). Fix it yourself — do not ask the user to run commands.
-   If github.com is unreachable (common in mainland China without a proxy),
-   retry the clone through a mirror prefix, e.g.
-   `git clone https://gh-proxy.com/https://github.com/Benboerba620/ai-signal.git <install_path>`
-   or `git clone https://ghfast.top/https://github.com/Benboerba620/ai-signal.git <install_path>`
-   (or another gh-proxy-style service if both are down). Daily feed
-   fetching does NOT need a proxy afterwards — prepare_digest.py falls back
-   through 4 jsDelivr CDN endpoints (cdn / fastly / gcore / testingcf)
-   automatically, and `AI_SIGNAL_BASE_URLS` can override the mirror list
-   if a user's network needs a custom one.
+OpenClaw 可使用 `~/skills/consumer-signal`；其他 Agent 可使用其本身的技能目录。完整检出必须
+包含 `SKILL.md`、`scripts/`、`prompts/`、`references/` 和 `config/`。
 
-4. Proceed directly to the Onboarding flow below.
-
-The user's only action is telling you to install. Everything else is your job.
-
----
+用户的私有偏好与配送密钥只放在 `~/.consumer-signal/`，不放进 Git 仓库。更新运行时使用
+`git pull --ff-only`，不覆盖这个目录。

@@ -1,33 +1,8 @@
-# Detecting Platform
+# 运行方式
 
-Before doing anything, detect which platform you're running on. The question
-that matters is: **can you, the Agent, schedule a task that re-invokes yourself
-daily?**
+优先使用当前 Agent 平台提供的定时任务或通知机制；平台名称和调度 API 不同，因此不要假定某个
+特定客户端存在。定时任务的指令应明确为：运行 Consumer Signal，执行 `prepare_digest.py`，
+仅用 payload 与 prompts 写日报，成功后按配置投递。
 
-```bash
-which openclaw 2>/dev/null && echo "PLATFORM=openclaw" || echo "PLATFORM=other"
-```
-
-- **OpenClaw** (`PLATFORM=openclaw`): Persistent agent with built-in messaging channels.
-  Delivery is automatic via OpenClaw's channel system. Cron uses `openclaw cron add`.
-
-- **Other persistent agent** (e.g. Tencent WorkBuddy or any platform with a
-  scheduled-task / 定时任务 feature that re-runs the Agent — not just a bare
-  shell command): treat yourself as persistent. In Step 8, use your platform's
-  scheduler and make the scheduled instruction "run the ai-signal skill digest
-  workflow", so the Agent remix step is included in every scheduled run.
-
-- **Non-persistent** (Claude Code, Cursor, Codex, etc.): can generate digests
-  on demand only. Do not set a plain system cron that pipes JSON directly to
-  delivery; that skips the Agent remix and sends raw JSON.
-
-Save it in config.json as `"platform": "openclaw"`, `"platform": "persistent"`,
-or `"platform": "other"`.
-
-**Windows note:** the bash snippets in this file are examples, not literal
-requirements. On Windows, translate them to PowerShell (write files with your
-file-writing tool instead of heredocs; use `$env:TEMP` instead of `/tmp`; the
-command is `python`, not `python3`). The Python scripts themselves are
-cross-platform.
-
----
+若平台不支持调度，保留手动入口 `/consumer-signal`。无论哪种方式，都需要先配置指向已发布
+consumer-signal 中央 feed 的 `feed_base_urls` 或相应环境变量。

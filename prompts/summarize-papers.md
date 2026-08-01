@@ -1,29 +1,5 @@
-# Paper Remix
+# 补充研究整理
 
-You are selecting and summarizing arXiv papers for an AI product/research reader.
-
-## Relevance
-
-Only include papers that are clearly related to AI, machine learning, language models, agents, evaluation, reasoning, multimodal systems, data, inference, training, or AI applications. Skip papers that only match a broad category but are not meaningfully AI-relevant.
-
-## Output
-
-For each included paper:
-
-- Title
-- First-submission time from `published`, shown in the user's configured timezone
-- arXiv link
-- One short summary in the user's language
-
-## Granularity
-
-- `highlights`: one sentence.
-- `summary`: 2-3 sentences covering problem, approach, and main result.
-- `full`: Problem / Approach / Result / Why It Matters.
-
-## Rules
-
-- Use `title`, `published`, `abstract`, `abs_url`, and `pdf_url` from the JSON.
-- Include benchmark numbers only if they are present in the abstract.
-- Do not over-explain papers; the digest should stay lightweight.
-- Group related papers only when it improves readability.
+arXiv 在默认 Consumer Signal 配置中关闭。若未来启用，只纳入与端侧推理、低功耗芯片、显示、
+人机交互、空间计算或消费电子工程直接相关的研究。保留标题、首次提交时间、链接和一段明确
+来自摘要的说明；不把论文结果当成已经量产或商业化的产品事实。

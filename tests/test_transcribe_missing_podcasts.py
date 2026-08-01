@@ -101,26 +101,15 @@ class DurationTests(unittest.TestCase):
         self.assertEqual(reason, "manual channel override")
 
 
-class SemiAnalysisConfigTests(unittest.TestCase):
-    def test_uses_direct_audio_feed_with_transcription_guard(self):
+class ConsumerPodcastConfigTests(unittest.TestCase):
+    def test_keeps_unverified_podcast_sources_disabled(self):
         sources = json.loads((ROOT_DIR / "config" / "sources.json").read_text("utf-8"))
-        channel = next(
-            item
-            for item in sources["podcasts"]["channels"]
-            if item["name"] == "SemiAnalysis"
-        )
+        podcasts = sources["podcasts"]
 
-        self.assertEqual(
-            channel["rss_url"], "https://anchor.fm/s/10fbee758/podcast/rss"
-        )
-        self.assertEqual(
-            channel["transcript_rss_url"],
-            "https://www.youtube.com/feeds/videos.xml?channel_id=UCf_KhBXw5TIV0A7butjgFhg",
-        )
-        self.assertFalse(channel["transcribe_missing"])
-        self.assertTrue(channel["require_direct_audio"])
-        self.assertEqual(channel["min_transcription_duration_minutes"], 10)
-        self.assertEqual(channel["min_transcription_audio_bytes"], 5000000)
+        self.assertFalse(podcasts["enabled"])
+        self.assertEqual(podcasts["channels"], [])
+        self.assertEqual(podcasts["people"]["searches"], [])
+        self.assertEqual(podcasts["transcription"]["default_limit"], 0)
 
     def test_rss_parser_preserves_enclosure_size(self):
         xml = """<rss xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd">

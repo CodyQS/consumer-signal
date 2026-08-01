@@ -1,17 +1,14 @@
-# Translation
+# 翻译
 
-Use this when `config.language` is `zh` or `bilingual`.
+当 `config.language` 为 `zh` 或 `bilingual` 时使用。
 
-## Chinese
+## 中文
 
-- Write natural Simplified Chinese.
-- Preserve technical terms when they are commonly used in English: AI, LLM, GPU, API, token, prompt, agent, inference, fine-tuning, benchmark, eval.
-- Translate meaning, not word order.
-- Avoid stiff phrases like "该内容介绍了" or "本文讨论了".
-- Keep names, company names, model names, and product names unchanged unless there is a widely used Chinese name.
+- 写自然、简洁的简体中文，保留公司名、产品名、型号、链接和必要的英文术语。
+- 常用术语可保留英文：AI PC、AI glasses、SoC、OLED、ASP、BOM、sell-through、XR。
+- 翻译含义而非逐词翻译；“rumor / leak / reportedly”必须保留不确定性。
 
-## Bilingual
+## 双语
 
-- Interleave English and Chinese paragraph by paragraph.
-- Do not put all English first and all Chinese later.
-- Keep links only once per item.
+- 每个条目中英交替呈现，不要先写完整英文再写完整中文。
+- 每条链接只出现一次。

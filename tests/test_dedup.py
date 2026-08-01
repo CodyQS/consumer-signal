@@ -67,7 +67,7 @@ class TwitterFetchTests(unittest.IsolatedAsyncioTestCase):
                 self.pool = FakePool()
 
             def search(self, query, **_kwargs):
-                return search_results[query]
+                return search_results[query.split(" since:", 1)[0]]
 
         async def fake_gather(items):
             return items
@@ -149,6 +149,59 @@ class TwitterFetchTests(unittest.IsolatedAsyncioTestCase):
             result = await generate_feed.fetch_twitter(sources)
 
         self.assertEqual([item["id"] for item in result["x"][0]["tweets"]], ["3"])
+
+    async def test_null_caps_keep_all_relevant_posts_without_an_engagement_gate(self):
+        def tweet(tweet_id, likes):
+            return SimpleNamespace(
+                id=tweet_id,
+                user=SimpleNamespace(username="sama"),
+                url=f"https://x.com/sama/status/{tweet_id}",
+                rawContent=f"AI product announcement {tweet_id}",
+                date=datetime.now(timezone.utc),
+                likeCount=likes,
+                retweetCount=0,
+                replyCount=0,
+                inReplyToTweetId=None,
+            )
+
+        items = [tweet(1, 0), tweet(2, 2), tweet(3, 1)]
+        calls = []
+
+        class FakePool:
+            async def get_account(self, _):
+                return object()
+
+        class FakeAPI:
+            def __init__(self, *_args, **_kwargs):
+                self.pool = FakePool()
+
+            def search(self, query, **kwargs):
+                calls.append((query, kwargs))
+                return items
+
+        async def fake_gather(values):
+            return values
+
+        fake_twscrape = types.ModuleType("twscrape")
+        fake_twscrape.API = FakeAPI
+        fake_twscrape.gather = fake_gather
+        sources = {
+            "twitter": {
+                "lookback_hours": 48,
+                "max_tweets_per_user": None,
+                "min_engagement": None,
+                "accounts": [{"handle": "sama", "name": "Sam Altman"}],
+            }
+        }
+
+        with mock.patch.dict(os.environ, {"TWITTER_COOKIES": "test"}), \
+                mock.patch.dict(sys.modules, {"twscrape": fake_twscrape}), \
+                mock.patch.object(generate_feed, "detect_proxy", return_value=""):
+            result = await generate_feed.fetch_twitter(sources)
+
+        self.assertEqual([item["id"] for item in result["x"][0]["tweets"]], ["2", "3", "1"])
+        self.assertEqual(calls[0][1]["limit"], -1)
+        self.assertIn("since:", calls[0][0])
 
     async def test_rejects_an_all_empty_twitter_response(self):
         class FakePool:

@@ -1,61 +1,60 @@
 ---
-name: ai-signal
-description: AI Signal daily digest for Agent users — tracks top AI builders on X, podcasts, official AI-lab blogs (Anthropic / OpenAI / DeepMind), and arXiv papers, then remixes central JSON feeds into a personalized digest. Use when the user wants AI/investing insights or invokes /ai-signal. No content API keys required.
+name: consumer-signal
+description: Consumer Signal is an Agent-side daily research digest for consumer electronics: terminal brands, supply chains, market supply and demand, and emerging on-device-AI categories. Use when the user asks for consumer-electronics intelligence or invokes /consumer-signal. No editorial regional or brand quotas.
 ---
-# AI Signal — 追踪 AI 一线的声音
 
-You are an Agent-side content curator. AI Signal centrally fetches raw public
-feeds, and you read those JSON feeds to create a personalized digest for the
-user.
+# Consumer Signal — 消费电子行业日报
 
-Philosophy: follow people who build products and have original opinions, not
-influencers who regurgitate information.
+Consumer Signal centrally collects filtered public signals; you are the
+Agent-side editor who turns its JSON feeds into a useful daily research brief.
+Its scope is global terminal brands, China/Taiwan/Asia supply chains, market
+data and channels, and emerging devices such as AI phones, AI PCs, AI glasses,
+XR, wearables and smart speakers.
 
-**This skill is for Agent users.** The central service does not deliver a
-finished newsletter by itself. It provides JSON feeds; the user's Agent reads
-the JSON, follows the prompts, writes the digest, and optionally sends it through
-Telegram, Feishu, email, or the current chat.
+Organize the digest by industry question, never by a preset company list:
 
-**No content API keys are required from users.** All source content (X/Twitter
-posts, podcast transcripts/descriptions, official AI-lab blog announcements,
-arXiv papers) is fetched centrally and served via public JSON feeds. Users only need delivery API keys if they choose
-Telegram, Feishu, or email delivery.
+1. Terminal product R&D, launches, availability and market reception.
+2. Supply-chain names, stocking, components and new technology.
+3. Industry-wide supply, demand, channel and market-data changes.
+4. Emerging device categories and on-device AI.
 
-Default mode is **JSON-first**. Do not depend on central Chinese summaries.
-Central summaries are legacy/debug-only and should be ignored unless the user's
-config explicitly sets `include_central_summaries: true`.
+Do not apply regional, brand, category, source-type, or section-count quotas.
+Rank by importance, novelty, evidence strength, and explanatory value. Clearly
+label each item as 官方, 数据/研究, 报道/分析, 线索/传闻, or 评测/口碑; rumors
+and early signals must remain conditional.
+
+The service provides JSON rather than a finished newsletter. Read the payload,
+follow the bundled prompts, write the digest in the user's requested language,
+and optionally deliver it through Telegram, Feishu, email, or this chat. Do
+not browse or add outside facts while writing a digest from a prepared payload.
 
 ## Runtime Bootstrap
 
-Before any workflow, locate a complete AI Signal checkout. A complete checkout
-contains both `scripts/prepare_digest.py` and `references/` next to this file.
-
-If those support files are present, use this skill directory directly. Some
-single-file installers copy only `SKILL.md`; in that case, install the runtime
-checkout automatically:
+Before any workflow, locate a complete Consumer Signal checkout. It contains
+both `scripts/prepare_digest.py` and `references/` next to this file. If a
+single-file installer copied only `SKILL.md`, install the runtime from the
+repository named by `CONSUMER_SIGNAL_REPO_URL`:
 
 ```bash
-mkdir -p ~/.ai-signal/runtime
-git clone --depth 1 https://github.com/Benboerba620/ai-signal.git ~/.ai-signal/runtime/ai-signal
-python -m pip install -r ~/.ai-signal/runtime/ai-signal/requirements.txt
+test -n "$CONSUMER_SIGNAL_REPO_URL"
+mkdir -p ~/.consumer-signal/runtime
+git clone --depth 1 "$CONSUMER_SIGNAL_REPO_URL" ~/.consumer-signal/runtime/consumer-signal
+python -m pip install -r ~/.consumer-signal/runtime/consumer-signal/requirements.txt
 ```
 
 If the runtime checkout already exists, update it with `git pull --ff-only`
-instead of cloning again. If GitHub is unreachable, use one of the mirror
-prefixes documented in the Auto-Install reference. Treat the complete checkout
-as `SKILL_DIR` for every referenced command. Keep user configuration in
-`~/.ai-signal/`; never replace it while refreshing the runtime checkout.
+instead of cloning again. Keep user configuration in `~/.consumer-signal/`;
+never replace it while refreshing the runtime. `CONSUMER_SIGNAL_REPO_URL` is
+intentional: the project owner chooses and publishes their own consumer-signal
+repository before other Agents install it.
 
 ## Workflow References
 
 Read only the references needed for the current task:
 
-- Installing: read `references/auto-install-zero-command-line.md`,
-  `references/detecting-platform.md`, then
+- Installing: `references/auto-install-zero-command-line.md`, then
   `references/first-run-onboarding.md`.
-- Generating or delivering a digest: read
-  `references/content-delivery-digest-run.md`. For an explicit on-demand
-  request, also read `references/manual-trigger.md`.
-- Changing user preferences: read `references/configuration-handling.md`.
-- Answering questions about tracked feeds: read
-  `references/content-sources.md`.
+- Generating or delivering a digest: `references/content-delivery-digest-run.md`.
+  For an explicit on-demand request, also read `references/manual-trigger.md`.
+- Changing user preferences: `references/configuration-handling.md`.
+- Answering questions about source coverage: `references/content-sources.md`.

@@ -1,4 +1,4 @@
-"""Local-only feedback storage and aggregation for AI Signal."""
+"""Local-only feedback storage and aggregation for Consumer Signal."""
 
 import argparse
 import json
@@ -7,7 +7,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 
-DEFAULT_FEEDBACK_PATH = Path.home() / ".ai-signal" / "feedback.jsonl"
+DEFAULT_FEEDBACK_PATH = Path.home() / ".consumer-signal" / "feedback.jsonl"
 VALID_ACTIONS = {"useful", "noise", "more", "less", "expanded"}
 
 
@@ -125,7 +125,7 @@ def summarize_feedback(path=DEFAULT_FEEDBACK_PATH, days=90, now=None):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Record or summarize local AI Signal feedback")
+    parser = argparse.ArgumentParser(description="Record or summarize local Consumer Signal feedback")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     record_parser = subparsers.add_parser("record")

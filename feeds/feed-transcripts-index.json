@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-30T23:00:16.558483+00:00",
+  "generated_at": "2026-08-01T08:41:22.721190+00:00",
   "retention_days": 14,
   "transcripts": [
     {
@@ -443,32 +443,6 @@
       "cached_at": "2026-07-16T22:53:21.164853+00:00",
       "last_seen_at": "2026-07-18T22:51:23.370757+00:00",
       "expires_at": "2026-08-01T22:51:23.370757+00:00"
-    },
-    {
-      "guid": "https://www.latent.space/p/ainews-not-much-happened-today-c72",
-      "link": "https://www.latent.space/p/ainews-not-much-happened-today-c72",
-      "channel": "Latent Space",
-      "title": "[AINews] not much happened today",
-      "pub_date": "2026-07-14T23:54:07+00:00",
-      "transcript_path": "feeds/transcripts/8c69719170ff5e540f17fe26.txt",
-      "transcript_chars": 10719,
-      "transcript_source": "episode_page",
-      "cached_at": "2026-07-15T22:54:47.218085+00:00",
-      "last_seen_at": "2026-07-17T22:43:26.409199+00:00",
-      "expires_at": "2026-07-31T22:43:26.409199+00:00"
-    },
-    {
-      "guid": "https://www.latent.space/p/aiewf26trends",
-      "link": "https://www.latent.space/p/aiewf26trends",
-      "channel": "Latent Space",
-      "title": "5 Trends That Defined AI Engineering at World’s Fair 2026",
-      "pub_date": "2026-07-14T23:21:21+00:00",
-      "transcript_path": "feeds/transcripts/00c7fc67b46263be28dcd07c.txt",
-      "transcript_chars": 17585,
-      "transcript_source": "episode_page",
-      "cached_at": "2026-07-15T22:54:47.218085+00:00",
-      "last_seen_at": "2026-07-17T22:43:26.409199+00:00",
-      "expires_at": "2026-07-31T22:43:26.409199+00:00"
     }
   ]
 }

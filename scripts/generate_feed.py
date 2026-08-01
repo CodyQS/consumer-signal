@@ -46,6 +46,15 @@ MIN_TRANSCRIPT_CHARS = 600
 MAX_TRANSCRIPT_CHARS = int(os.environ.get("MAX_TRANSCRIPT_CHARS", "500000"))
 MIN_TRANSCRIPT_CHARS_PER_MIN = int(os.environ.get("MIN_TRANSCRIPT_CHARS_PER_MIN", "150"))
 
+QUALCOMM_NEWS_QUERY = """
+query ConsumerSignalNewsFinder($searchInput: InterceptorSearchInput!) {
+  newsFinder(searchInput: $searchInput) {
+    numberFound
+    resources
+  }
+}
+"""
+
 DEFAULT_TWEET_CORE_KEYWORDS = [
     "ai", "artificial intelligence", "agi", "agent", "agents", "agentic",
     "llm", "llms", "language model", "foundation model", "models", "world model",
@@ -119,6 +128,11 @@ def write_json(path, data):
 def load_sources():
     with open(ROOT_DIR / "config" / "sources.json", "r", encoding="utf-8") as f:
         return json.load(f)
+
+
+def source_enabled(sources, source_type):
+    """Return whether one feed type is enabled (enabled defaults to true)."""
+    return (sources.get(source_type) or {}).get("enabled", True) is not False
 
 
 def log(msg):
@@ -208,11 +222,91 @@ def keyword_match(text, keywords):
     return False
 
 
-def is_relevant_tweet(text, twitter_cfg):
-    """Keep AI/devtools/investing signal, drop pure social or holiday posts."""
+def load_content_filter(sources, content_type=None):
+    """Load an optional profile-specific content filter from config/.
+
+    The original project used one flat X keyword list.  Consumer Signal needs
+    a stricter two-gate filter that can also be shared by X, RSS, podcasts and
+    research feeds.  Keeping the filter optional preserves the legacy fallback
+    for lightweight tests and for users of the upstream AI configuration.
+    """
+    filtering_cfg = sources.get("filtering") or {}
+    applies_to = filtering_cfg.get("apply_to") or []
+    if content_type and applies_to and content_type not in applies_to:
+        return None
+    relative_path = str(filtering_cfg.get("config_path") or "").strip()
+    if not relative_path:
+        return None
+
+    path = Path(relative_path)
+    if not path.is_absolute():
+        path = ROOT_DIR / "config" / path
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            content_filter = json.load(f)
+    except (OSError, json.JSONDecodeError) as exc:
+        raise RuntimeError(f"Cannot load content filter {path}: {exc}") from exc
+
+    if not isinstance(content_filter.get("priority_phrases"), list):
+        raise RuntimeError(f"Content filter {path} is missing priority_phrases")
+    if not isinstance(content_filter.get("subject_keywords"), dict):
+        raise RuntimeError(f"Content filter {path} is missing subject_keywords")
+    if not isinstance(content_filter.get("signal_keywords"), dict):
+        raise RuntimeError(f"Content filter {path} is missing signal_keywords")
+    return content_filter
+
+
+def flatten_keyword_groups(groups):
+    """Flatten named keyword groups while accepting only non-empty strings."""
+    return [
+        term
+        for terms in (groups or {}).values()
+        if isinstance(terms, list)
+        for term in terms
+        if isinstance(term, str) and term.strip()
+    ]
+
+
+def is_relevant_content(text, content_filter):
+    """Apply the Consumer Signal priority-or-subject-and-signal rule."""
+    if not content_filter:
+        return None
+
+    normalized = normalize_text(text)
+    logic = content_filter.get("matching_logic") or {}
+    min_length = int(logic.get("minimum_text_length", 0) or 0)
+    if not normalized or len(normalized) < min_length:
+        return False
+
+    exclusions = content_filter.get("exclusion_rules") or {}
+    if keyword_match(normalized, exclusions.get("absolute_exclude") or []):
+        return False
+
+    priority_phrases = content_filter.get("priority_phrases") or []
+    if keyword_match(normalized, priority_phrases):
+        return True
+
+    subjects = flatten_keyword_groups(content_filter.get("subject_keywords"))
+    signals = flatten_keyword_groups(content_filter.get("signal_keywords"))
+    has_subject = keyword_match(normalized, subjects)
+    # Broad AI/cloud/crypto/politics terms are explicitly non-topical unless a
+    # terminal, component or supply-chain subject has also been named.
+    conditional_exclusions = exclusions.get("exclude_without_device_or_supply_chain_context") or []
+    if keyword_match(normalized, conditional_exclusions) and not has_subject:
+        return False
+    if not has_subject:
+        return False
+    return keyword_match(normalized, signals)
+
+
+def is_relevant_tweet(text, twitter_cfg, content_filter=None):
+    """Apply a configured Consumer Signal filter or retain the legacy fallback."""
     text = normalize_text(text)
     if not text:
         return False
+
+    if content_filter:
+        return is_relevant_content(text, content_filter)
 
     exclude_keywords = twitter_cfg.get("exclude_keywords") or DEFAULT_TWEET_EXCLUDE_KEYWORDS
     if keyword_match(text, exclude_keywords):
@@ -463,9 +557,20 @@ def detect_proxy():
 
 async def fetch_twitter(sources):
     twitter_cfg = sources.get("twitter", {})
+    content_filter = load_content_filter(sources, "twitter")
     accounts = twitter_cfg.get("accounts", [])
     lookback = twitter_cfg.get("lookback_hours", 48)
-    max_per_user = twitter_cfg.get("max_tweets_per_user", 5)
+    # A null cap means retain every in-window, relevant original post.  ``-1``
+    # is twscrape's documented unbounded limit; the server query still begins
+    # at the relevant calendar date and the exact lookback is applied below.
+    configured_max_per_user = twitter_cfg.get("max_tweets_per_user")
+    max_per_user = (
+        int(configured_max_per_user)
+        if configured_max_per_user is not None
+        else None
+    )
+    if max_per_user is not None and max_per_user < 1:
+        raise ValueError("twitter.max_tweets_per_user must be a positive integer or null")
 
     cookies = os.environ.get("TWITTER_COOKIES", "")
     if not cookies:
@@ -502,11 +607,23 @@ async def fetch_twitter(sources):
 
     for account in accounts:
         handle = account["handle"]
-        min_engagement = int(account.get("min_engagement", twitter_cfg.get("min_engagement", 0)))
+        configured_min_engagement = account.get(
+            "min_engagement", twitter_cfg.get("min_engagement")
+        )
+        min_engagement = (
+            int(configured_min_engagement)
+            if configured_min_engagement is not None
+            else None
+        )
         include_replies = bool(account.get("include_replies", twitter_cfg.get("include_replies", False)))
         log(f"📥 @{handle}...")
         try:
-            raw = await gather(api.search(f"from:{handle}", limit=max_per_user * 3, kv={"product": "Latest"}))
+            query = f"from:{handle} since:{since:%Y-%m-%d}"
+            raw = await gather(api.search(
+                query,
+                limit=max_per_user * 3 if max_per_user is not None else -1,
+                kv={"product": "Latest"},
+            ))
         except Exception as e:
             log(f"  ⚠️ {e}")
             errors.append(f"@{handle}: {e}")
@@ -534,7 +651,7 @@ async def fetch_twitter(sources):
                 reply_count += 1
                 continue
             engagement = tweet_engagement_score(t)
-            if engagement < min_engagement:
+            if min_engagement is not None and engagement < min_engagement:
                 low_engagement_count += 1
                 continue
             tid = str(t.id)
@@ -542,7 +659,7 @@ async def fetch_twitter(sources):
                 continue
             seen_ids.add(tid)
             global_seen_ids.add(tid)
-            if not is_relevant_tweet(t.rawContent, twitter_cfg):
+            if not is_relevant_tweet(t.rawContent, twitter_cfg, content_filter):
                 filtered_count += 1
                 continue
             tweets.append({
@@ -557,7 +674,8 @@ async def fetch_twitter(sources):
             })
 
         tweets.sort(key=lambda x: x["engagement_score"], reverse=True)
-        tweets = tweets[:max_per_user]
+        if max_per_user is not None:
+            tweets = tweets[:max_per_user]
 
         if tweets:
             details = []
@@ -567,7 +685,7 @@ async def fetch_twitter(sources):
                 details.append(f"skipped {repost_count} reposts")
             if reply_count:
                 details.append(f"skipped {reply_count} replies")
-            if low_engagement_count:
+            if min_engagement is not None and low_engagement_count:
                 details.append(f"skipped {low_engagement_count} below engagement {min_engagement}")
             suffix = f", {', '.join(details)}" if details else ""
             log(f"  ✅ {len(tweets)} tweets{suffix}")
@@ -579,18 +697,22 @@ async def fetch_twitter(sources):
                 details.append(f"skipped {repost_count} reposts")
             if reply_count:
                 details.append(f"skipped {reply_count} replies")
-            if low_engagement_count:
+            if min_engagement is not None and low_engagement_count:
                 details.append(f"skipped {low_engagement_count} below engagement {min_engagement}")
             suffix = f" ({', '.join(details)})" if details else ""
             log(f"  ⏭️ nothing new{suffix}")
 
-        results.append({
+        account_result = {
             "handle": handle,
             "name": account["name"],
             "domain": account.get("domain", "ai"),
             "tier": account.get("tier", ""),
             "tweets": tweets,
-        })
+        }
+        for key in ("region", "evidence_class", "source_layer"):
+            if account.get(key):
+                account_result[key] = account[key]
+        results.append(account_result)
 
     if accounts and accounts_with_raw_results == 0:
         raise RuntimeError(
@@ -1458,6 +1580,7 @@ def fetch_people(sources, existing_feed, known_video_ids):
 
 def fetch_podcasts(sources, people_only=False):
     podcast_cfg = sources.get("podcasts", {})
+    content_filter = load_content_filter(sources, "podcasts")
     channels = podcast_cfg.get("channels", [])
     lookback = podcast_cfg.get("lookback_hours", 72)
 
@@ -1498,6 +1621,23 @@ def fetch_podcasts(sources, people_only=False):
     all_episodes.extend(people_episodes)
     errors.extend(people_errors)
 
+    if content_filter:
+        before_filter = len(all_episodes)
+        all_episodes = [
+            episode for episode in all_episodes
+            if is_relevant_content(
+                " ".join(
+                    [
+                        episode.get("title", ""),
+                        episode.get("description", ""),
+                        (episode.get("transcript") or "")[:5000],
+                    ]
+                ),
+                content_filter,
+            )
+        ]
+        log(f"  🧹 Consumer filter kept {len(all_episodes)}/{before_filter} podcast episodes")
+
     all_episodes.sort(key=lambda x: x.get("pub_date", ""), reverse=True)
     return {"podcasts": all_episodes, "errors": errors if errors else None}
 
@@ -1506,6 +1646,7 @@ def fetch_podcasts(sources, people_only=False):
 
 def fetch_arxiv(sources):
     arxiv_cfg = sources.get("arxiv", {})
+    content_filter = load_content_filter(sources, "arxiv")
     categories = arxiv_cfg.get("categories", [])
     max_papers = arxiv_cfg.get("max_papers", 30)
     lookback = arxiv_cfg.get("lookback_hours", 48)
@@ -1570,6 +1711,8 @@ def fetch_arxiv(sources):
             title = re.sub(r"\s+", " ", title)
             abstract = entry.findtext("atom:summary", "", ns).strip()
             abstract = re.sub(r"\s+", " ", abstract)
+            if content_filter and not is_relevant_content(f"{title} {abstract}", content_filter):
+                continue
 
             authors = []
             for author_el in entry.findall("atom:author", ns):
@@ -1634,6 +1777,36 @@ def parse_rfc822_datetime(value):
     return dt
 
 
+def with_source_metadata(article, src):
+    for key in ("domain", "region", "evidence_class", "source_layer"):
+        if src.get(key):
+            article[key] = src[key]
+    return article
+
+
+def source_excludes_content(article, src):
+    """Apply a narrow source-level exclusion after the shared topic filter.
+
+    Some broad consumer-tech feeds publish adjacent verticals whose model names
+    are indistinguishable from device names in headlines. Source-specific terms
+    keep those recurring false positives out without broadening global rules.
+    """
+    terms = src.get("exclude_keywords") or []
+    if not terms:
+        return False
+    text = f"{article.get('title', '')} {article.get('summary', '')}"
+    return keyword_match(text, terms)
+
+
+def source_has_priority_signal(article, src):
+    """Allow a vetted source's narrowly defined, high-value signal phrases."""
+    terms = src.get("priority_keywords") or []
+    if not terms:
+        return False
+    text = f"{article.get('title', '')} {article.get('summary', '')}"
+    return keyword_match(text, terms)
+
+
 def blog_items_from_rss(xml_text, src, since):
     """Parse RSS 2.0 <item> or Atom <entry> elements into article dicts."""
     root = ET.fromstring(xml_text)
@@ -1677,7 +1850,7 @@ def blog_items_from_rss(xml_text, src, since):
                 if not page_date or page_date < since - timedelta(hours=24):
                     continue  # can't verify freshness — never push undated items
                 pub = page_date
-        articles.append({
+        article = {
             "id": link,
             "source": src["id"],
             "source_name": src.get("name", src["id"]),
@@ -1685,7 +1858,730 @@ def blog_items_from_rss(xml_text, src, since):
             "url": link,
             "published": pub.isoformat() if pub else None,
             "summary": summary[:600].strip(),
-        })
+        }
+        articles.append(with_source_metadata(article, src))
+    return articles
+
+
+def _json_ld_values(value):
+    if isinstance(value, dict):
+        yield value
+        for child in value.values():
+            yield from _json_ld_values(child)
+    elif isinstance(value, list):
+        for child in value:
+            yield from _json_ld_values(child)
+
+
+def blog_items_from_json_ld_listing(html, src, since):
+    """Parse public listing pages that expose NewsArticle data in JSON-LD."""
+    scripts = re.findall(
+        r'<script[^>]+type=["\']application/ld\+json["\'][^>]*>(.*?)</script>',
+        html or "",
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+    articles = []
+    seen_urls = set()
+    for payload in scripts:
+        try:
+            data = json.loads(payload.strip())
+        except json.JSONDecodeError:
+            continue
+        for item in _json_ld_values(data):
+            item_type = item.get("@type")
+            item_types = item_type if isinstance(item_type, list) else [item_type]
+            if "NewsArticle" not in item_types:
+                continue
+            url = str(item.get("url") or item.get("@id") or "").strip()
+            title = str(item.get("headline") or item.get("name") or "").strip()
+            if not url or not title or url in seen_urls:
+                continue
+            published = parse_iso_datetime(str(item.get("datePublished") or ""))
+            if not published or published < since:
+                continue
+            seen_urls.add(url)
+            article = {
+                "id": url,
+                "source": src["id"],
+                "source_name": src.get("name", src["id"]),
+                "title": title,
+                "url": url,
+                "published": published.isoformat(),
+                "summary": html_to_text(str(item.get("description") or ""))[:600],
+            }
+            articles.append(with_source_metadata(article, src))
+    return articles
+
+
+def blog_items_from_google_devices_listing(html, src, since):
+    """Parse Google Blog's public Devices landing-page cards.
+
+    The page does not publish JSON-LD or RSS cards, but every card carries its
+    canonical URL, title and precise publication timestamp in Google's public
+    analytics attribute.  Keep this adapter scoped to ``uni-nup__article``
+    cards so navigation and related links cannot enter the feed.
+    """
+    card_re = re.compile(
+        r'<a\b(?P<attrs>[^>]*\bclass=["\'][^"\']*\buni-nup__article\b[^"\']*["\'][^>]*)>'
+        r'(?P<body>.*?)</a>',
+        re.IGNORECASE | re.DOTALL,
+    )
+    articles = []
+    seen_urls = set()
+    for card in card_re.finditer(html or ""):
+        attrs = card.group("attrs")
+        href = re.search(r'\bhref=["\'](?P<url>[^"\']+)["\']', attrs, re.IGNORECASE)
+        analytics = re.search(
+            r'\bdata-ga4-analytics-lead-click\s*=\s*(["\'])(?P<data>.*?)\1',
+            attrs,
+            re.IGNORECASE | re.DOTALL,
+        )
+        title_match = re.search(
+            r'<h3[^>]*\buni-nup__header\b[^>]*>(?P<title>.*?)</h3>',
+            card.group("body"),
+            re.IGNORECASE | re.DOTALL,
+        )
+        if not href or not analytics or not title_match:
+            continue
+        try:
+            metadata = json.loads(unescape(analytics.group("data")))
+            published = datetime.strptime(
+                str(metadata.get("publish_date") or ""), "%Y-%m-%d|%H:%M"
+            ).replace(tzinfo=timezone.utc)
+        except (json.JSONDecodeError, TypeError, ValueError):
+            continue
+        if published < since:
+            continue
+        url = urljoin(src["url"], unescape(href.group("url")))
+        title = normalize_text(html_to_text(title_match.group("title")))
+        if not title or url in seen_urls:
+            continue
+        seen_urls.add(url)
+        category = normalize_text(str(metadata.get("primary_tag") or ""))
+        article = {
+            "id": url,
+            "source": src["id"],
+            "source_name": src.get("name", src["id"]),
+            "title": title,
+            "url": url,
+            "published": published.isoformat(),
+            "summary": f"Google Devices 官方分类：{category}" if category else "Google Devices 官方分类。",
+        }
+        articles.append(with_source_metadata(article, src))
+    return articles
+
+
+def blog_items_from_counterpoint_listing(html, src, since):
+    """Parse Counterpoint's server-rendered public Insights card listing."""
+    item_re = re.compile(
+        r'<a\s+class="block"\s+href="(?P<url>/en/insights/[^"\']+)"[^>]*>'
+        r'.*?<h3[^>]*>(?P<title>.*?)</h3>.*?<p[^>]*>(?P<date>'
+        r'(?:January|February|March|April|May|June|July|August|September|'
+        r'October|November|December)\s+\d{1,2},\s+20\d{2}'
+        r')</p>',
+        re.IGNORECASE | re.DOTALL,
+    )
+    articles = []
+    seen_urls = set()
+    for match in item_re.finditer(html or ""):
+        try:
+            published = datetime.strptime(
+                normalize_text(match.group("date")), "%B %d, %Y"
+            ).replace(tzinfo=timezone.utc)
+        except ValueError:
+            continue
+        if published < since:
+            continue
+        url = urljoin(src["url"], unescape(match.group("url")))
+        title = normalize_text(html_to_text(match.group("title")))
+        if not title or url in seen_urls:
+            continue
+        seen_urls.add(url)
+        article = {
+            "id": url,
+            "source": src["id"],
+            "source_name": src.get("name", src["id"]),
+            "title": title,
+            "url": url,
+            "published": published.isoformat(),
+            "summary": "",
+        }
+        articles.append(with_source_metadata(article, src))
+    return articles
+
+
+def cinno_article_summary(url):
+    """Extract the public ``导语`` lead from one CINNO article page."""
+    try:
+        resp = httpx.get(url, timeout=20, headers={"User-Agent": UA}, follow_redirects=True)
+        resp.raise_for_status()
+    except Exception:
+        return ""
+    match = re.search(r"导语\s*[：:]\s*(.*?)(?:</section>|</p>)", resp.text, re.DOTALL)
+    return normalize_text(html_to_text(match.group(1)))[:600] if match else ""
+
+
+def blog_items_from_cinno_listing(html, src, since, max_items=None):
+    """Parse CINNO's public industry-insights listing.
+
+    CINNO's server-rendered page exposes the article URL, English-formatted
+    publication date and title in each ``.news_list li`` card, but does not
+    emit RSS or JSON-LD. Keep this narrowly scoped to that stable public card
+    structure rather than treating any arbitrary HTML page as a feed.
+    """
+    item_re = re.compile(
+        r'<li>\s*<a\s+href=["\'](?P<url>/industry/news/[^"\']+)["\'][^>]*>'
+        r'.*?<h2>(?P<date>[^<]+)</h2>.*?'
+        r'<p[^>]*class=["\']wx_num["\'][^>]*>(?P<title>.*?)</p>',
+        re.IGNORECASE | re.DOTALL,
+    )
+    articles = []
+    seen_urls = set()
+    for match in item_re.finditer(html or ""):
+        if max_items is not None and len(articles) >= max_items:
+            break
+        try:
+            published = datetime.strptime(
+                normalize_text(match.group("date")), "%d %B %Y"
+            ).replace(tzinfo=timezone.utc)
+        except ValueError:
+            continue
+        if published < since:
+            continue
+        url = urljoin(src["url"], unescape(match.group("url")))
+        title = normalize_text(match.group("title"))
+        if not title or url in seen_urls:
+            continue
+        seen_urls.add(url)
+        summary = cinno_article_summary(url) if src.get("fetch_article_summary") else ""
+        article = {
+            "id": url,
+            "source": src["id"],
+            "source_name": src.get("name", src["id"]),
+            "title": title,
+            "url": url,
+            "published": published.isoformat(),
+            "summary": summary,
+        }
+        articles.append(with_source_metadata(article, src))
+    return articles
+
+
+VIVO_LISTING_DATE_RE = re.compile(
+    r"\b(Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|"
+    r"Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\.?\s+"
+    r"(\d{1,2}),\s+(20\d{2})\b",
+    re.IGNORECASE,
+)
+
+
+def parse_vivo_listing_date(value):
+    """Extract ``March 4, 2026`` from vivo's location-prefixed display date."""
+    match = VIVO_LISTING_DATE_RE.search(normalize_text(value))
+    if not match:
+        return None
+    try:
+        return datetime.strptime(
+            f"{match.group(1)[:3].title()} {match.group(2)} {match.group(3)}", "%b %d %Y"
+        ).replace(tzinfo=timezone.utc)
+    except ValueError:
+        return None
+
+
+def blog_items_from_vivo_listing(html, src, since):
+    """Parse vivo's server-rendered public newsroom cards.
+
+    The date includes an optional city/country prefix (for example, ``SHENZHEN,
+    China, September 30, 2024``), so the parser extracts only the unambiguous
+    month-day-year portion. It is intentionally tied to vivo's newsroom card
+    classes instead of trying to interpret links elsewhere on the page.
+    """
+    item_re = re.compile(
+        r'<li[^>]*class=["\'][^"\']*list-container-item[^"\']*["\'][^>]*>'
+        r'.*?<a[^>]+href=["\'](?P<url>/en/about-vivo/news/[^"\'?#]+)["\'][^>]*>'
+        r'.*?<p[^>]*class=["\'][^"\']*list-container-title[^"\']*["\'][^>]*>'
+        r'(?P<title>.*?)</p>.*?<span[^>]*class=["\'][^"\']*list-container-time[^"\']*["\'][^>]*>'
+        r'(?P<date>.*?)</span>',
+        re.IGNORECASE | re.DOTALL,
+    )
+    articles = []
+    seen_urls = set()
+    for match in item_re.finditer(html or ""):
+        published = parse_vivo_listing_date(match.group("date"))
+        if not published or published < since:
+            continue
+        url = urljoin(src["url"], unescape(match.group("url")))
+        title = normalize_text(html_to_text(match.group("title")))
+        if not title or url in seen_urls:
+            continue
+        seen_urls.add(url)
+        article = {
+            "id": url,
+            "source": src["id"],
+            "source_name": src.get("name", src["id"]),
+            "title": title,
+            "url": url,
+            "published": published.isoformat(),
+            "summary": "",
+        }
+        articles.append(with_source_metadata(article, src))
+    return articles
+
+
+def blog_items_from_oppo_listing(payload, src, since):
+    """Parse OPPO's public newsroom listing API response.
+
+    OPPO's public press listing is rendered client-side, but its own website
+    requests this unauthenticated endpoint. Use only its title, description,
+    release timestamp and canonical OPPO URL; no login-only data is accessed.
+    """
+    if isinstance(payload, str):
+        try:
+            payload = json.loads(payload)
+        except json.JSONDecodeError:
+            return []
+    rows = (payload or {}).get("data", {}).get("rows", [])
+    articles = []
+    seen_urls = set()
+    for row in rows:
+        url = str(row.get("pageUrl") or "").strip()
+        title = normalize_text(str(row.get("title") or ""))
+        try:
+            published = datetime.fromtimestamp(float(row.get("publishTime")), tz=timezone.utc)
+        except (TypeError, ValueError, OSError):
+            continue
+        if not url or not title or published < since or url in seen_urls:
+            continue
+        seen_urls.add(url)
+        article = {
+            "id": url,
+            "source": src["id"],
+            "source_name": src.get("name", src["id"]),
+            "title": title,
+            "url": url,
+            "published": published.isoformat(),
+            "summary": normalize_text(str(row.get("description") or ""))[:600],
+        }
+        articles.append(with_source_metadata(article, src))
+    return articles
+
+
+def blog_items_from_xiaomi_listing(payload, src, since):
+    """Parse Xiaomi Global Discover's public newsroom listing response.
+
+    Xiaomi's Discover page is client-rendered. Its public, unauthenticated
+    listing API supplies the news title, excerpt, material ID and publication
+    timestamp used by that page. Only configured ``material_types`` are
+    accepted, so short product videos do not get mistaken for newsroom
+    announcements.
+    """
+    if isinstance(payload, str):
+        try:
+            payload = json.loads(payload)
+        except json.JSONDecodeError:
+            return []
+    rows = (payload or {}).get("data", {}).get("list", [])
+    allowed_types = set(src.get("material_types") or ["newsroom"])
+    article_template = src.get(
+        "article_url_template", "https://www.mi.com/global/discover/article?id={material_id}"
+    )
+    articles = []
+    seen_urls = set()
+    for row in rows:
+        if str(row.get("material_type") or "") not in allowed_types:
+            continue
+        material_id = str(row.get("material_id") or "").strip()
+        title = normalize_text(html_to_text(str(row.get("title") or "")))
+        try:
+            published = datetime.fromtimestamp(float(row.get("add_time")), tz=timezone.utc)
+        except (TypeError, ValueError, OSError):
+            continue
+        if not material_id or not title or published < since:
+            continue
+        url = article_template.format(material_id=quote_plus(material_id))
+        if url in seen_urls:
+            continue
+        seen_urls.add(url)
+        article = {
+            "id": url,
+            "source": src["id"],
+            "source_name": src.get("name", src["id"]),
+            "title": title,
+            "url": url,
+            "published": published.isoformat(),
+            "summary": normalize_text(html_to_text(str(row.get("desc") or "")))[:600],
+        }
+        articles.append(with_source_metadata(article, src))
+    return articles
+
+
+def xiaomi_listing_row_times(payload):
+    """Return valid source timestamps for deciding whether another page is fresh."""
+    rows = (payload or {}).get("data", {}).get("list", [])
+    times = []
+    for row in rows:
+        try:
+            times.append(datetime.fromtimestamp(float(row.get("add_time")), tz=timezone.utc))
+        except (TypeError, ValueError, OSError):
+            continue
+    return times
+
+
+def fetch_xiaomi_listing(src, since):
+    """Fetch every Xiaomi listing page that can still contain the lookback window.
+
+    The official API reports its finite page count. Pages are newest-first, so
+    pagination stops only once a complete page is older than the requested
+    freshness window (or the API's last page is reached), never at an editorial
+    item count.
+    """
+    api_url = src["api_url"]
+    params = dict(src.get("api_params") or {})
+    page = int(params.pop("page_num", 1))
+    articles = []
+    seen_pages = set()
+    seen_page_signatures = set()
+
+    while page not in seen_pages:
+        seen_pages.add(page)
+        page_params = {**params, "page_num": page}
+        resp = httpx.get(
+            api_url,
+            params=page_params,
+            timeout=30,
+            headers={"User-Agent": UA},
+            follow_redirects=True,
+        )
+        resp.raise_for_status()
+        payload = resp.json()
+
+        data = (payload or {}).get("data", {})
+        rows = data.get("list", [])
+        page_signature = tuple(
+            str(row.get("material_id") or "") for row in rows
+        )
+        # The public API occasionally serves page one again for a later page
+        # parameter. Treat that as the end of the fresh listing rather than
+        # emitting duplicate announcements or repeatedly requesting it.
+        if page_signature and page_signature in seen_page_signatures:
+            break
+        seen_page_signatures.add(page_signature)
+        articles.extend(blog_items_from_xiaomi_listing(payload, src, since))
+        try:
+            total_pages = int(data.get("total_pages") or page)
+        except (TypeError, ValueError):
+            total_pages = page
+        row_times = xiaomi_listing_row_times(payload)
+        # Xiaomi's public listing is explicitly newest-first. Once the oldest
+        # record on a page falls before the window, later pages cannot add a
+        # fresh record. This is a time-boundary stop, not an item-count cap.
+        if not rows or page >= total_pages or (row_times and min(row_times) < since):
+            break
+        page += 1
+
+    return articles
+
+
+def blog_items_from_qualcomm_listing(payload, src, since):
+    """Parse Qualcomm's public Newsroom GraphQL listing response.
+
+    The query is the same unauthenticated listing query used by Qualcomm's
+    public releases page. It returns headline, canonical relative link,
+    publication epoch and public tags; full articles are not scraped here.
+    """
+    if isinstance(payload, str):
+        try:
+            payload = json.loads(payload)
+        except json.JSONDecodeError:
+            return []
+    rows = (payload or {}).get("data", {}).get("newsFinder", {}).get("resources", [])
+    articles = []
+    seen_urls = set()
+    for row in rows:
+        title = normalize_text(html_to_text(str(row.get("title") or "")))
+        url = urljoin(src["url"], str(row.get("link") or ""))
+        raw_published = row.get("field_publish_date") or row.get("publishedOn")
+        if isinstance(raw_published, list):
+            raw_published = raw_published[0] if raw_published else None
+        try:
+            published = datetime.fromtimestamp(float(raw_published), tz=timezone.utc)
+        except (TypeError, ValueError, OSError):
+            continue
+        if not title or not url or published < since or url in seen_urls:
+            continue
+        seen_urls.add(url)
+        summary = row.get("field_pr_body_summary") or row.get("search_api_metatag_description") or ""
+        if isinstance(summary, list):
+            summary = " ".join(str(value) for value in summary)
+        tags = row.get("field_content_tags_name") or []
+        if isinstance(tags, list) and tags:
+            tag_summary = ", ".join(normalize_text(str(tag)) for tag in tags if tag)
+            summary = f"{summary} Official tags: {tag_summary}.".strip()
+        article = {
+            "id": url,
+            "source": src["id"],
+            "source_name": src.get("name", src["id"]),
+            "title": title,
+            "url": url,
+            "published": published.isoformat(),
+            "summary": normalize_text(html_to_text(str(summary)))[:600],
+        }
+        articles.append(with_source_metadata(article, src))
+    return articles
+
+
+def qualcomm_listing_row_times(payload):
+    """Return valid Newsroom publication times for GraphQL pagination."""
+    rows = (payload or {}).get("data", {}).get("newsFinder", {}).get("resources", [])
+    times = []
+    for row in rows:
+        value = row.get("field_publish_date") or row.get("publishedOn")
+        if isinstance(value, list):
+            value = value[0] if value else None
+        try:
+            times.append(datetime.fromtimestamp(float(value), tz=timezone.utc))
+        except (TypeError, ValueError, OSError):
+            continue
+    return times
+
+
+def fetch_qualcomm_listing(src, since):
+    """Fetch public Qualcomm release pages until the time window is exhausted."""
+    page_size = int(src.get("page_size", 24))
+    resource_fields = src.get("resource_fields") or [
+        "title",
+        "link",
+        "field_publish_date",
+        "field_pr_body_summary",
+        "field_content_tags_name",
+        "resourceSubType",
+        "field_press_note",
+    ]
+    filter_fields = [
+        {"field": "isDownloadable", "values": ["False"]},
+        {
+            "field": "resourceSubType",
+            "values": src.get("resource_subtypes") or ["press_release", "press_note"],
+        },
+    ]
+    start = 0
+    articles = []
+    seen_page_signatures = set()
+
+    while True:
+        payload = {
+            "query": QUALCOMM_NEWS_QUERY,
+            "variables": {
+                "searchInput": {
+                    "requestGuid": "consumer-signal",
+                    "resourceFields": resource_fields,
+                    "rows": page_size,
+                    "sourceApplication": "WWW-AEM",
+                    "start": start,
+                    "filterFields": filter_fields,
+                    "searchText": "",
+                    "sessionGuid": "consumer-signal",
+                    "sortFields": {"field": "publishedOn", "order": "desc"},
+                }
+            },
+        }
+        resp = httpx.post(
+            src["graphql_url"],
+            json=payload,
+            timeout=30,
+            headers={"User-Agent": UA},
+            follow_redirects=True,
+        )
+        resp.raise_for_status()
+        response_payload = resp.json()
+        if response_payload.get("errors"):
+            raise RuntimeError(f"Qualcomm public listing error: {response_payload['errors']}")
+        rows = (
+            response_payload.get("data", {}).get("newsFinder", {}).get("resources", [])
+        )
+        page_signature = tuple(
+            str(row.get("id") or row.get("link") or "") for row in rows
+        )
+        if page_signature and page_signature in seen_page_signatures:
+            break
+        seen_page_signatures.add(page_signature)
+        articles.extend(blog_items_from_qualcomm_listing(response_payload, src, since))
+
+        row_times = qualcomm_listing_row_times(response_payload)
+        # Qualcomm's request explicitly sorts by publishedOn descending. Once
+        # a page crosses the requested time boundary, subsequent rows are old.
+        if not rows or len(rows) < page_size or (row_times and min(row_times) < since):
+            break
+        start += page_size
+
+    return articles
+
+
+def blog_items_from_cninfo_listing(payload, src, since):
+    """Parse the public CNINFO title-search response for configured companies.
+
+    CNINFO is used here only as the official disclosure index: announcement
+    title, timestamp and its own public PDF link. The workflow deliberately
+    does not download, OCR or summarize the underlying filings.
+    """
+    if isinstance(payload, str):
+        try:
+            payload = json.loads(payload)
+        except json.JSONDecodeError:
+            return []
+    rows = (payload or {}).get("announcements") or []
+    articles = []
+    seen_urls = set()
+    for row in rows:
+        title = normalize_text(html_to_text(str(row.get("announcementTitle") or "")))
+        title = re.sub(r"\s+([：:，,。；;])", r"\1", title)
+        adjunct_url = str(row.get("adjunctUrl") or "").strip()
+        try:
+            published = datetime.fromtimestamp(
+                float(row.get("announcementTime")) / 1000, tz=timezone.utc
+            )
+        except (TypeError, ValueError, OSError):
+            continue
+        if not title or not adjunct_url or published < since:
+            continue
+        url = urljoin("https://static.cninfo.com.cn/", adjunct_url)
+        if url in seen_urls:
+            continue
+        seen_urls.add(url)
+        sec_name = normalize_text(html_to_text(str(row.get("secName") or "")))
+        sec_code = normalize_text(str(row.get("secCode") or ""))
+        issuer = " ".join(part for part in (sec_name, sec_code) if part)
+        article = {
+            "id": url,
+            "source": src["id"],
+            "source_name": src.get("name", src["id"]),
+            "title": title,
+            "url": url,
+            "published": published.isoformat(),
+            "summary": f"巨潮资讯法定披露索引。披露主体：{issuer}。" if issuer else "巨潮资讯法定披露索引。",
+        }
+        articles.append(with_source_metadata(article, src))
+    return articles
+
+
+def cninfo_listing_row_times(payload):
+    """Return valid CNINFO publication times for pagination decisions."""
+    rows = (payload or {}).get("announcements") or []
+    times = []
+    for row in rows:
+        try:
+            times.append(
+                datetime.fromtimestamp(float(row.get("announcementTime")) / 1000, tz=timezone.utc)
+            )
+        except (TypeError, ValueError, OSError):
+            continue
+    return times
+
+
+def fetch_cninfo_listing(src, since):
+    """Fetch configured consumer-electronics suppliers from CNINFO by title.
+
+    Each company is queried separately to keep the official search endpoint's
+    semantics clear. Its results are sorted by publication date, and pagination
+    stops at the time boundary rather than at a source-item cap.
+    """
+    companies = src.get("companies") or []
+    page_size = int(src.get("page_size", 30))
+    now = datetime.now(timezone.utc)
+    articles = []
+    seen_urls = set()
+
+    for company in companies:
+        page = 1
+        seen_page_signatures = set()
+        while True:
+            params = {
+                "searchkey": company,
+                "sdate": since.strftime("%Y-%m-%d"),
+                "edate": now.strftime("%Y-%m-%d"),
+                "isfulltext": "false",
+                "sortName": "pubdate",
+                "sortType": "desc",
+                "pageNum": page,
+                "pageSize": page_size,
+                "type": "",
+            }
+            resp = httpx.get(
+                src["url"],
+                params=params,
+                timeout=30,
+                headers={"User-Agent": UA},
+                follow_redirects=True,
+            )
+            resp.raise_for_status()
+            payload = resp.json()
+            rows = (payload or {}).get("announcements") or []
+            page_signature = tuple(
+                str(row.get("announcementId") or row.get("adjunctUrl") or "")
+                for row in rows
+            )
+            if page_signature and page_signature in seen_page_signatures:
+                break
+            seen_page_signatures.add(page_signature)
+            for item in blog_items_from_cninfo_listing(payload, src, since):
+                if item["url"] not in seen_urls:
+                    seen_urls.add(item["url"])
+                    articles.append(item)
+
+            row_times = cninfo_listing_row_times(payload)
+            # The request explicitly sorts newest-first. Once one record is
+            # older than the cutoff, subsequent pages cannot add fresh filings.
+            if not rows or len(rows) < page_size or (row_times and min(row_times) < since):
+                break
+            page += 1
+
+    return articles
+
+
+def blog_items_from_mediatek_listing(html, src, since):
+    """Parse MediaTek's public server-rendered Press Room cards.
+
+    The official page supplies a canonical link, an excerpt and a precise
+    ``03 Jun 2026 - 14:00`` release timestamp in every ``.pr-item``. Keep the
+    matcher specific to those cards, so header/footer product links cannot be
+    mistaken for press releases.
+    """
+    item_re = re.compile(
+        r'<div[^>]*class=["\'][^"\']*pr-item\b[^"\']*["\'][^>]*>'
+        r'.*?<h3[^>]*class=["\'][^"\']*pr-item-title[^"\']*["\'][^>]*>'
+        r'\s*<a[^>]+href=["\'](?P<url>[^"\']+)["\'][^>]*>(?P<title>.*?)</a>'
+        r'.*?<div[^>]*class=["\'][^"\']*pr_item_date[^"\']*["\'][^>]*>.*?'
+        r'<p[^>]*>(?P<date>.*?)</p>.*?'
+        r'<div[^>]*class=["\'][^"\']*pr-item-excerpt[^"\']*["\'][^>]*>'
+        r'(?P<summary>.*?)</div>',
+        re.IGNORECASE | re.DOTALL,
+    )
+    articles = []
+    seen_urls = set()
+    for match in item_re.finditer(html or ""):
+        try:
+            published = datetime.strptime(
+                normalize_text(match.group("date")), "%d %b %Y - %H:%M"
+            ).replace(tzinfo=timezone.utc)
+        except ValueError:
+            continue
+        if published < since:
+            continue
+        url = urljoin(src["url"], unescape(match.group("url")))
+        title = normalize_text(html_to_text(match.group("title")))
+        if not title or url in seen_urls:
+            continue
+        seen_urls.add(url)
+        article = {
+            "id": url,
+            "source": src["id"],
+            "source_name": src.get("name", src["id"]),
+            "title": title,
+            "url": url,
+            "published": published.isoformat(),
+            "summary": normalize_text(html_to_text(match.group("summary")))[:600],
+        }
+        articles.append(with_source_metadata(article, src))
     return articles
 
 
@@ -1760,7 +2656,7 @@ def blog_items_from_sitemap(xml_text, src, since, max_items):
     # the lookback window's starting day is not dropped by its 00:00 timestamp.
     day_since = since - timedelta(hours=24)
     for lastmod, loc in hits:
-        if len(articles) >= max_items:
+        if max_items is not None and len(articles) >= max_items:
             break
         title, desc, page_date = blog_page_meta(loc)
         if not page_date:
@@ -1772,7 +2668,7 @@ def blog_items_from_sitemap(xml_text, src, since, max_items):
         if not title:
             # Fall back to a de-slugged URL tail so the item is still usable
             title = loc.rstrip("/").split("/")[-1].replace("-", " ").strip().title()
-        articles.append({
+        article = {
             "id": loc,
             "source": src["id"],
             "source_name": src.get("name", src["id"]),
@@ -1780,15 +2676,23 @@ def blog_items_from_sitemap(xml_text, src, since, max_items):
             "url": loc,
             "published": page_date.isoformat(),
             "summary": desc[:600],
-        })
+        }
+        articles.append(with_source_metadata(article, src))
     return articles
 
 
 def fetch_blogs(sources):
     blogs_cfg = sources.get("blogs", {})
+    content_filter = load_content_filter(sources, "blogs")
     blog_sources = blogs_cfg.get("sources", [])
     lookback = blogs_cfg.get("lookback_hours", 48)
-    max_per_source = blogs_cfg.get("max_per_source", 5)
+    # A ``null``/omitted limit intentionally means no editorial source cap.
+    # The shared relevance rule, freshness window and later de-duplication
+    # determine inclusion; callers can still set a positive operational limit
+    # only when they explicitly need one.
+    max_per_source = blogs_cfg.get("max_per_source")
+    if max_per_source is not None:
+        max_per_source = int(max_per_source)
 
     log(f"\n━━━ Official Blogs ━━━")
     if not blog_sources:
@@ -1800,15 +2704,66 @@ def fetch_blogs(sources):
 
     for src in blog_sources:
         name = src.get("name", src.get("id", "?"))
+        if src.get("enabled", True) is False:
+            log(f"  ⏭️ {name}: disabled")
+            continue
         try:
-            resp = httpx.get(src["url"], timeout=30, headers={"User-Agent": UA}, follow_redirects=True)
-            resp.raise_for_status()
-            if src.get("type") == "sitemap":
-                found = blog_items_from_sitemap(resp.text, src, since, max_per_source)
+            source_type = src.get("type")
+            if source_type == "oppo_listing":
+                resp = httpx.post(
+                    src["api_url"],
+                    json=src.get("api_payload") or {},
+                    timeout=30,
+                    headers={"User-Agent": UA},
+                    follow_redirects=True,
+                )
+                resp.raise_for_status()
+                found = blog_items_from_oppo_listing(resp.json(), src, since)
+            elif source_type == "xiaomi_listing":
+                found = fetch_xiaomi_listing(src, since)
+            elif source_type == "qualcomm_listing":
+                found = fetch_qualcomm_listing(src, since)
+            elif source_type == "cninfo_listing":
+                found = fetch_cninfo_listing(src, since)
             else:
-                found = blog_items_from_rss(resp.text, src, since)
+                resp = httpx.get(
+                    src["url"],
+                    timeout=30,
+                    headers={"User-Agent": UA},
+                    cookies=src.get("cookies") or None,
+                    follow_redirects=True,
+                )
+                resp.raise_for_status()
+                if source_type == "sitemap":
+                    found = blog_items_from_sitemap(resp.text, src, since, max_per_source)
+                elif source_type == "json_ld_listing":
+                    found = blog_items_from_json_ld_listing(resp.text, src, since)
+                elif source_type == "google_devices_listing":
+                    found = blog_items_from_google_devices_listing(resp.text, src, since)
+                elif source_type == "counterpoint_listing":
+                    found = blog_items_from_counterpoint_listing(resp.text, src, since)
+                elif source_type == "cinno_listing":
+                    found = blog_items_from_cinno_listing(resp.text, src, since, max_per_source)
+                elif source_type == "vivo_listing":
+                    found = blog_items_from_vivo_listing(resp.text, src, since)
+                elif source_type == "mediatek_listing":
+                    found = blog_items_from_mediatek_listing(resp.text, src, since)
+                else:
+                    found = blog_items_from_rss(resp.text, src, since)
+            if content_filter:
+                found = [
+                    item for item in found
+                    if (
+                        is_relevant_content(
+                            f"{item.get('title', '')} {item.get('summary', '')}", content_filter
+                        )
+                        or source_has_priority_signal(item, src)
+                    )
+                    and not source_excludes_content(item, src)
+                ]
             found.sort(key=lambda a: a.get("published") or "", reverse=True)
-            found = found[:max_per_source]
+            if max_per_source is not None:
+                found = found[:max_per_source]
             articles.extend(found)
             log(f"  ✅ {name}: {len(found)} articles")
         except Exception as e:
@@ -1833,6 +2788,7 @@ async def main():
     args = parser.parse_args()
 
     sources = load_sources()
+    feed_profile = sources.get("filtering", {}).get("profile", "legacy")
     now = datetime.now(timezone.utc)
     FEEDS_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -1841,16 +2797,24 @@ async def main():
 
     if run_all or args.twitter_only:
         log("\n━━━ Twitter/X ━━━")
-        twitter_feed = await fetch_twitter(sources)
+        if source_enabled(sources, "twitter"):
+            twitter_feed = await fetch_twitter(sources)
+        else:
+            twitter_feed = {"x": [], "errors": None, "disabled": True}
         twitter_feed["generated_at"] = now.isoformat()
+        twitter_feed["profile"] = feed_profile
         write_json(FEEDS_DIR / "feed-x.json", twitter_feed)
         active = sum(1 for a in twitter_feed["x"] if a["tweets"])
         log(f"✅ feed-x.json ({active}/{len(twitter_feed['x'])} accounts with content)")
 
     if run_all or args.podcasts_only or args.people_only:
         log("\n━━━ Podcasts ━━━")
-        podcast_feed = fetch_podcasts(sources, people_only=args.people_only)
+        if source_enabled(sources, "podcasts"):
+            podcast_feed = fetch_podcasts(sources, people_only=args.people_only)
+        else:
+            podcast_feed = {"podcasts": [], "errors": None, "disabled": True}
         podcast_feed["generated_at"] = now.isoformat()
+        podcast_feed["profile"] = feed_profile
         with_transcript = sum(1 for e in podcast_feed["podcasts"] if e.get("transcript"))
         externalize_transcripts(podcast_feed)
         write_json(FEEDS_DIR / "feed-podcasts.json", podcast_feed)
@@ -1859,24 +2823,40 @@ async def main():
             f"{with_transcript} with transcript, {person_hits} person hits)")
 
     if run_all or args.arxiv_only:
-        arxiv_feed = fetch_arxiv(sources)
-        arxiv_feed["generated_at"] = now.isoformat()
-        if not arxiv_feed["papers"]:
+        if source_enabled(sources, "arxiv"):
+            arxiv_feed = fetch_arxiv(sources)
+        else:
+            arxiv_feed = {"papers": [], "errors": None, "disabled": True}
+        if source_enabled(sources, "arxiv") and not arxiv_feed["papers"]:
             existing_arxiv = load_feed("feed-arxiv.json")
-            if existing_arxiv and existing_arxiv.get("papers"):
+            if (
+                existing_arxiv
+                and existing_arxiv.get("profile") == feed_profile
+                and existing_arxiv.get("papers")
+            ):
                 log("ℹ️  arXiv fetch returned nothing; keeping existing feed-arxiv.json")
                 arxiv_feed = existing_arxiv
+        arxiv_feed["generated_at"] = now.isoformat()
+        arxiv_feed["profile"] = feed_profile
         write_json(FEEDS_DIR / "feed-arxiv.json", arxiv_feed)
         log(f"✅ feed-arxiv.json ({len(arxiv_feed['papers'])} papers)")
 
     if run_all or args.blogs_only:
-        blogs_feed = fetch_blogs(sources)
-        blogs_feed["generated_at"] = now.isoformat()
-        if not blogs_feed["articles"] and blogs_feed.get("errors"):
+        if source_enabled(sources, "blogs"):
+            blogs_feed = fetch_blogs(sources)
+        else:
+            blogs_feed = {"articles": [], "errors": None, "disabled": True}
+        if source_enabled(sources, "blogs") and not blogs_feed["articles"] and blogs_feed.get("errors"):
             existing_blogs = load_feed("feed-blogs.json")
-            if existing_blogs and existing_blogs.get("articles"):
+            if (
+                existing_blogs
+                and existing_blogs.get("profile") == feed_profile
+                and existing_blogs.get("articles")
+            ):
                 log("ℹ️  Blog fetch failed everywhere; keeping existing feed-blogs.json")
                 blogs_feed = existing_blogs
+        blogs_feed["generated_at"] = now.isoformat()
+        blogs_feed["profile"] = feed_profile
         write_json(FEEDS_DIR / "feed-blogs.json", blogs_feed)
         log(f"✅ feed-blogs.json ({len(blogs_feed['articles'])} articles)")
 

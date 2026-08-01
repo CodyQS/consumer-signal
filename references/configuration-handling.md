@@ -1,58 +1,36 @@
-# Configuration Handling
+# 用户配置
 
-When the user says something that sounds like a settings change:
+用户配置位于 `~/.consumer-signal/config.json`。不要把 Telegram、飞书或 Resend 密钥写入该文件；
+它们属于 `~/.consumer-signal/.env`。
 
-### Source Changes
-Sources are curated centrally and update automatically.
-If a user asks to add or remove sources: "信息源由中央统一维护，自动更新。
-如果你想推荐一个信息源，可以到 https://github.com/Benboerba620/ai-signal 提 issue。"
+最小可用配置如下。`feed_base_urls` 指向用户自己发布的中央仓库；可以填写 raw GitHub URL 或
+任意可公开访问、保留相同目录结构的镜像根地址。
 
-### Schedule Changes
-- "改成每周" → update `frequency`
-- "改到早上 9 点" → update `deliveryTime`; if using OpenClaw, update the Agent cron job
-- "时区改成东部时间" → update `timezone`; if using OpenClaw, update the Agent cron job
-
-### Language Changes
-- "切换成中文" → update `language` to `"zh"`
-- "切换成英文" → update `language` to `"en"`
-- "切换成双语" → update `language` to `"bilingual"`
-
-### Granularity Changes
-- "更简短一些" → change `granularity` to `highlights`
-- "更详细一些" → change `granularity` to `full`
-- "标准就好" → change `granularity` to `summary`
-
-### Domain Changes
-- "只看 AI" → update `domains` to `["ai"]`
-- "加上投资" → update `domains` to `["ai", "invest"]`
-
-### Delivery Changes
-- "推到 Telegram / 飞书" → update `delivery.method`, guide setup if needed
-- "换个邮箱" → update `delivery.email`
-- "直接在这里看" → set `delivery.method` to `"stdout"`
-
-### Prompt Changes
-When a user wants to customize how their digest sounds, copy the relevant prompt
-to `~/.ai-signal/prompts/` and edit the copy. User prompts always override the
-repo defaults and will not be overwritten by central updates.
-
-```bash
-mkdir -p ~/.ai-signal/prompts
-cp ${SKILL_DIR}/prompts/<filename>.md ~/.ai-signal/prompts/<filename>.md
+```json
+{
+  "language": "zh",
+  "granularity": "summary",
+  "timezone": "Asia/Shanghai",
+  "domains": ["consumer_electronics"],
+  "feed_base_urls": [
+    "https://raw.githubusercontent.com/<owner>/consumer-signal/main"
+  ],
+  "delivery": {"method": "stdout"}
+}
 ```
 
-Then edit `~/.ai-signal/prompts/<filename>.md` with the user's requested change.
-Examples:
-- "短一点" → edit `digest-intro.md` and the relevant summarization prompt.
-- "更像投资简报" → edit `digest-intro.md`, `summarize-podcast.md`, and `summarize-papers.md`.
-- "推特只要翻译和原文" → edit `summarize-tweets.md`.
-- "恢复默认" → delete the user prompt file.
+也可以在运行环境设置 `CONSUMER_SIGNAL_BASE_URLS`（多个 URL 用逗号分隔）或
+`CONSUMER_SIGNAL_REPO_URL`。环境变量优先于配置文件，适合多台设备共享同一个源。
 
-### Info Requests
-- "看看我的设置" → display config.json
-- "我追踪了哪些源？" → list all sources from sources.json
-- "看看我的 prompt" → display prompt files
+可安全修改的偏好：
 
-After any change, confirm what was changed.
+- `language`: `zh`、`en` 或 `bilingual`。
+- `granularity`: `highlights`、`summary` 或 `full`。
+- `timezone`: IANA 时区，例如 `Asia/Shanghai`。
+- `delivery`: `stdout`、`telegram`、`feishu` 或 `email`。
 
----
+不要把“多看中国供应链”“少看某品牌”实现为自动比例限制。可把这类偏好写进用户的
+`~/.consumer-signal/prompts/digest-intro.md` 覆盖文件，作为排序偏好；重大且证据充分的信号
+仍然保留。需要改中央信息源、过滤词或证据规则时，应修改项目的
+`config/sources.json`、`config/filter-terms.consumer-electronics.json` 和
+`config/source-catalog.consumer-electronics.json`，再重新生成 feeds。

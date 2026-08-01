@@ -1,11 +1,11 @@
-"""Mark a prepared AI Signal digest as delivered.
+"""Mark a prepared Consumer Signal digest as delivered.
 
 prepare_digest.py writes a delivery-mark.json file with the item IDs selected
 for the digest. Run this script only after the digest has actually been shown or
 sent successfully. That keeps retries from losing unseen items.
 
 Usage:
-    python scripts/mark_delivered.py --file ~/.ai-signal/payload/delivery-mark.json
+    python scripts/mark_delivered.py --file ~/.consumer-signal/payload/delivery-mark.json
 """
 
 import argparse
@@ -15,7 +15,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 
-USER_DIR = Path.home() / ".ai-signal"
+USER_DIR = Path.home() / ".consumer-signal"
 SEEN_PATH = USER_DIR / "seen.json"
 DEFAULT_MARK_PATH = USER_DIR / "payload" / "delivery-mark.json"
 SEEN_RETENTION_DAYS = 14
