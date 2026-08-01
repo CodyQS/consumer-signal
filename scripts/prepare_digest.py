@@ -26,6 +26,7 @@ from pathlib import Path
 
 import httpx
 
+from event_dedup import dedupe_digest_events
 from feedback import summarize_feedback
 
 SCRIPT_DIR = Path(__file__).parent
@@ -127,7 +128,7 @@ def normalize_granularity(value):
 
 
 def build_output_contract(config):
-    language = normalize_language(config.get("language", "en"))
+    language = normalize_language(config.get("language", "zh"))
     granularity = normalize_granularity(config.get("granularity", "summary"))
     timezone_name = config.get("timezone") or "Asia/Shanghai"
 
@@ -185,6 +186,11 @@ def build_output_contract(config):
             (
                 "Do not impose regional, brand, category, source-type, or section-count quotas. "
                 "Rank by importance, evidence strength, novelty, and explanatory value."
+            ),
+            (
+                "Use event_groups as the editorial list for web and X coverage. Write one main "
+                "entry per event, use its primary source for the claim, and cite supporting_sources "
+                "as corroboration rather than repeating the same event."
             ),
             (
                 "Label the evidence of every item as one of: 官方, 数据/研究, 报道/分析, "
@@ -468,7 +474,7 @@ def choose_summary_profile(config):
     if explicit:
         return explicit
 
-    language = normalize_language(config.get("language", "en"))
+    language = normalize_language(config.get("language", "zh"))
     granularity = normalize_granularity(config.get("granularity", "summary"))
 
     if language == "zh":
@@ -549,6 +555,13 @@ def annotate_feed_sources(feed_sources, feeds):
             warnings.append(
                 f"{key} feed generated_at is older than {FEED_STALE_AFTER_HOURS} hours"
             )
+        feed_errors = (feed or {}).get("errors") or []
+        if feed_errors:
+            item["degraded"] = True
+            item["errors"] = feed_errors
+            warnings.append(f"{key} feed is degraded: {' | '.join(str(error) for error in feed_errors[:3])}")
+        else:
+            item["degraded"] = bool((feed or {}).get("degraded"))
         annotated[key] = item
     return annotated, warnings
 
@@ -655,7 +668,7 @@ def main():
     warnings = []
 
     # 1. User config
-    config = {"language": "en", "granularity": "summary", "delivery": {"method": "stdout"}}
+    config = {"language": "zh", "granularity": "summary", "delivery": {"method": "stdout"}}
     if CONFIG_PATH.exists():
         try:
             config = json.loads(CONFIG_PATH.read_text("utf-8-sig"))
@@ -748,8 +761,18 @@ def main():
             seen,
         )
 
+    # Raw feeds retain every attributable source.  At this final, reader-side
+    # stage, select one primary item per event and retain the other sources as
+    # corroborating links.  Mark all linked source IDs as delivered so a
+    # suppressed duplicate cannot surface on a subsequent rolling-window run.
+    x_accounts, articles, event_groups, event_ids = dedupe_digest_events(x_accounts, articles)
+    if not args.include_seen:
+        delivered_at = datetime.now(timezone.utc).isoformat()
+        for kind, ids in event_ids.items():
+            marks.setdefault(kind, {}).update({item_id: delivered_at for item_id in ids})
+
     # 5. Build output
-    language = normalize_language(config.get("language", "en"))
+    language = normalize_language(config.get("language", "zh"))
     domains = config.get("domains", ["consumer_electronics"])
     summary_profile = choose_summary_profile(config)
     available_summary_profiles = sorted(((feed_summaries or {}).get("profiles") or {}).keys())
@@ -805,10 +828,12 @@ def main():
         "total_tweets": sum(len(a.get("tweets", [])) for a in x_accounts),
         "arxiv_papers": len(papers),
         "blog_articles": len(articles),
+        "event_groups": len(event_groups),
+        "event_duplicates_merged": sum(event.get("duplicate_count", 0) for event in event_groups),
     }
     config_out = {
         "language": language,
-        "language_raw": config.get("language", "en"),
+        "language_raw": config.get("language", "zh"),
         "granularity": normalize_granularity(config.get("granularity", "summary")),
         "granularity_raw": config.get("granularity", "summary"),
         "timezone": config.get("timezone") or "Asia/Shanghai",
@@ -833,6 +858,7 @@ def main():
         "x": x_accounts,
         "papers": papers,
         "articles": articles,
+        "event_groups": event_groups,
         "stats": stats,
         "feedback_summary": feedback_summary,
         "prompts": prompts,
