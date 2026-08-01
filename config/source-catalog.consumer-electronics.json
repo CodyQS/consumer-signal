@@ -26,7 +26,9 @@
             "method": "rss",
             "url": "https://www.apple.com/ca/newsroom/rss-feed.rss",
             "status": "verified_with_current_parser"
-          }
+          },
+          "active_source_id": "apple_newsroom",
+          "notes": "已接入 Apple 官方 Newsroom RSS；以产品、可用性和端侧功能的正式公告为主。"
         },
         {
           "id": "samsung_global_newsroom",
@@ -85,6 +87,7 @@
             "url": "https://www.huawei.com/en/rss-feeds/huawei-updates/rss",
             "status": "verified_with_current_parser"
           },
+          "active_source_id": "huawei_updates",
           "notes": "涵盖企业与通信业务；需要消费电子关键词过滤。"
         },
         {
@@ -181,6 +184,7 @@
             "url": "https://my.idc.com/rss/rssconsumer.xml",
             "status": "verified_with_current_parser"
           },
+          "active_source_id": "idc_consumer",
           "notes": "内容较宽，必须增加消费电子关键词与品类过滤。"
         },
         {
@@ -195,6 +199,7 @@
             "url": "https://counterpointresearch.com/en/insights",
             "status": "verified_with_current_parser"
           },
+          "active_source_id": "counterpoint_insights",
           "notes": "已接入公开 Insights 列表；仅纳入共同消费电子过滤规则命中的公开文章，受限研究门户不抓取。"
         },
         {
@@ -331,6 +336,7 @@
             "url": "https://www.cinno.com.cn/industry/insights",
             "status": "verified_with_current_parser"
           },
+          "active_source_id": "cinno_research",
           "notes": "已接入公开行业洞察列表；重点关注显示、面板、终端统计、XR 与电子纸的公开摘要。付费报告不抓取。"
         },
         {

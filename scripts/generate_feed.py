@@ -139,6 +139,55 @@ def log(msg):
     print(msg, file=sys.stderr)
 
 
+def cached_feed_on_failure(filename, content_key, profile, error, attempted_at):
+    """Keep the last successful feed when an entire source type is unavailable.
+
+    A failed attempt must never overwrite useful data with an empty feed or
+    rewrite its ``generated_at`` timestamp as if stale data were fresh.  The
+    returned feed is explicitly marked degraded and records when it was last
+    attempted so clients can surface the limitation.
+    """
+    message = str(error)
+    existing = load_feed(filename)
+    if existing and existing.get("profile") == profile and content_key in existing:
+        retained = dict(existing)
+        old_errors = list(retained.get("errors") or [])
+        retained["errors"] = (old_errors if message in old_errors else old_errors + [message])[-5:]
+        retained["degraded"] = True
+        retained["attempted_at"] = attempted_at.isoformat()
+        retained["fallback_reason"] = "source_type_fetch_failed"
+        return retained, True
+    return {
+        content_key: [],
+        "errors": [message],
+        "degraded": True,
+        "attempted_at": attempted_at.isoformat(),
+        "fallback_reason": "source_type_fetch_failed_no_cache",
+    }, False
+
+
+def finalize_feed(feed, profile, generated_at, used_cache=False):
+    """Stamp a feed without ever presenting cached data as a fresh collection."""
+    if not used_cache:
+        feed["generated_at"] = generated_at.isoformat()
+        feed["profile"] = profile
+    else:
+        feed.setdefault("profile", profile)
+    feed.setdefault("attempted_at", generated_at.isoformat())
+    if feed.get("errors"):
+        feed["degraded"] = True
+    return feed
+
+
+def preserve_on_empty_error(feed, filename, content_key, profile, attempted_at):
+    """Use cached data for an all-error empty result; retain partial successes."""
+    if feed.get("errors") and not feed.get(content_key):
+        return cached_feed_on_failure(
+            filename, content_key, profile, " | ".join(str(error) for error in feed["errors"]), attempted_at
+        )
+    return feed, False
+
+
 class TextHTMLParser(HTMLParser):
     def __init__(self):
         super().__init__(convert_charrefs=True)
@@ -2797,24 +2846,44 @@ async def main():
 
     if run_all or args.twitter_only:
         log("\n━━━ Twitter/X ━━━")
+        twitter_used_cache = False
         if source_enabled(sources, "twitter"):
-            twitter_feed = await fetch_twitter(sources)
+            try:
+                twitter_feed = await fetch_twitter(sources)
+            except Exception as exc:
+                log(f"  ⚠️ Twitter/X unavailable: {exc}")
+                twitter_feed, twitter_used_cache = cached_feed_on_failure(
+                    "feed-x.json", "x", feed_profile, f"Twitter/X: {exc}", now
+                )
         else:
             twitter_feed = {"x": [], "errors": None, "disabled": True}
-        twitter_feed["generated_at"] = now.isoformat()
-        twitter_feed["profile"] = feed_profile
+        if not twitter_used_cache:
+            twitter_feed, twitter_used_cache = preserve_on_empty_error(
+                twitter_feed, "feed-x.json", "x", feed_profile, now
+            )
+        twitter_feed = finalize_feed(twitter_feed, feed_profile, now, twitter_used_cache)
         write_json(FEEDS_DIR / "feed-x.json", twitter_feed)
         active = sum(1 for a in twitter_feed["x"] if a["tweets"])
         log(f"✅ feed-x.json ({active}/{len(twitter_feed['x'])} accounts with content)")
 
     if run_all or args.podcasts_only or args.people_only:
         log("\n━━━ Podcasts ━━━")
+        podcast_used_cache = False
         if source_enabled(sources, "podcasts"):
-            podcast_feed = fetch_podcasts(sources, people_only=args.people_only)
+            try:
+                podcast_feed = fetch_podcasts(sources, people_only=args.people_only)
+            except Exception as exc:
+                log(f"  ⚠️ Podcasts unavailable: {exc}")
+                podcast_feed, podcast_used_cache = cached_feed_on_failure(
+                    "feed-podcasts.json", "podcasts", feed_profile, f"Podcasts: {exc}", now
+                )
         else:
             podcast_feed = {"podcasts": [], "errors": None, "disabled": True}
-        podcast_feed["generated_at"] = now.isoformat()
-        podcast_feed["profile"] = feed_profile
+        if not podcast_used_cache:
+            podcast_feed, podcast_used_cache = preserve_on_empty_error(
+                podcast_feed, "feed-podcasts.json", "podcasts", feed_profile, now
+            )
+        podcast_feed = finalize_feed(podcast_feed, feed_profile, now, podcast_used_cache)
         with_transcript = sum(1 for e in podcast_feed["podcasts"] if e.get("transcript"))
         externalize_transcripts(podcast_feed)
         write_json(FEEDS_DIR / "feed-podcasts.json", podcast_feed)
@@ -2823,40 +2892,42 @@ async def main():
             f"{with_transcript} with transcript, {person_hits} person hits)")
 
     if run_all or args.arxiv_only:
+        arxiv_used_cache = False
         if source_enabled(sources, "arxiv"):
-            arxiv_feed = fetch_arxiv(sources)
+            try:
+                arxiv_feed = fetch_arxiv(sources)
+            except Exception as exc:
+                log(f"  ⚠️ arXiv unavailable: {exc}")
+                arxiv_feed, arxiv_used_cache = cached_feed_on_failure(
+                    "feed-arxiv.json", "papers", feed_profile, f"arXiv: {exc}", now
+                )
         else:
             arxiv_feed = {"papers": [], "errors": None, "disabled": True}
-        if source_enabled(sources, "arxiv") and not arxiv_feed["papers"]:
-            existing_arxiv = load_feed("feed-arxiv.json")
-            if (
-                existing_arxiv
-                and existing_arxiv.get("profile") == feed_profile
-                and existing_arxiv.get("papers")
-            ):
-                log("ℹ️  arXiv fetch returned nothing; keeping existing feed-arxiv.json")
-                arxiv_feed = existing_arxiv
-        arxiv_feed["generated_at"] = now.isoformat()
-        arxiv_feed["profile"] = feed_profile
+        if not arxiv_used_cache:
+            arxiv_feed, arxiv_used_cache = preserve_on_empty_error(
+                arxiv_feed, "feed-arxiv.json", "papers", feed_profile, now
+            )
+        arxiv_feed = finalize_feed(arxiv_feed, feed_profile, now, arxiv_used_cache)
         write_json(FEEDS_DIR / "feed-arxiv.json", arxiv_feed)
         log(f"✅ feed-arxiv.json ({len(arxiv_feed['papers'])} papers)")
 
     if run_all or args.blogs_only:
+        blogs_used_cache = False
         if source_enabled(sources, "blogs"):
-            blogs_feed = fetch_blogs(sources)
+            try:
+                blogs_feed = fetch_blogs(sources)
+            except Exception as exc:
+                log(f"  ⚠️ Web sources unavailable: {exc}")
+                blogs_feed, blogs_used_cache = cached_feed_on_failure(
+                    "feed-blogs.json", "articles", feed_profile, f"Web sources: {exc}", now
+                )
         else:
             blogs_feed = {"articles": [], "errors": None, "disabled": True}
-        if source_enabled(sources, "blogs") and not blogs_feed["articles"] and blogs_feed.get("errors"):
-            existing_blogs = load_feed("feed-blogs.json")
-            if (
-                existing_blogs
-                and existing_blogs.get("profile") == feed_profile
-                and existing_blogs.get("articles")
-            ):
-                log("ℹ️  Blog fetch failed everywhere; keeping existing feed-blogs.json")
-                blogs_feed = existing_blogs
-        blogs_feed["generated_at"] = now.isoformat()
-        blogs_feed["profile"] = feed_profile
+        if not blogs_used_cache:
+            blogs_feed, blogs_used_cache = preserve_on_empty_error(
+                blogs_feed, "feed-blogs.json", "articles", feed_profile, now
+            )
+        blogs_feed = finalize_feed(blogs_feed, feed_profile, now, blogs_used_cache)
         write_json(FEEDS_DIR / "feed-blogs.json", blogs_feed)
         log(f"✅ feed-blogs.json ({len(blogs_feed['articles'])} articles)")
 

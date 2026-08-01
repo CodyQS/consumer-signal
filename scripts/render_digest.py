@@ -140,16 +140,49 @@ def selected_articles(data):
     return [article for article in data.get("articles") or [] if article.get("title") or article.get("url")]
 
 
+def event_consumer_items(data):
+    """Render one primary item per prepared cross-source event group."""
+    raw_by_event = {}
+    for article in selected_articles(data):
+        if article.get("event_id"):
+            raw_by_event[article["event_id"]] = article
+    for account, tweet in selected_tweets(data):
+        if tweet.get("event_id"):
+            raw_by_event[tweet["event_id"]] = {**tweet, "_parent": account}
+
+    items = []
+    for event in data.get("event_groups") or []:
+        primary = event.get("primary") or {}
+        raw = raw_by_event.get(event.get("id"), {})
+        body = raw.get("summary") or raw.get("description") or raw.get("text") or ""
+        item = {
+            "section": classify(f"{event.get('title', '')} {body}"),
+            "evidence": evidence_label(primary),
+            "source": primary.get("source") or "Web",
+            "title": event.get("title") or primary.get("title") or "未命名事件",
+            "body": short_text(body),
+            "url": primary.get("url") or raw.get("url") or "",
+            "time": primary.get("timestamp") or raw.get("published") or raw.get("created_at"),
+            "time_label": "来源时间",
+            "supporting_sources": event.get("supporting_sources") or [],
+        }
+        items.append(item)
+    return items
+
+
 def consumer_items(data):
+    if data.get("event_groups") is not None:
+        return event_consumer_items(data)
+
     items = []
     for article in selected_articles(data):
         items.append(
             {
-                "section": classify(" ".join([article.get("title", ""), article.get("description", "")])),
+                "section": classify(" ".join([article.get("title", ""), article.get("summary", ""), article.get("description", "")])),
                 "evidence": evidence_label(article),
                 "source": article.get("source_name") or article.get("source") or "Web",
                 "title": article.get("title") or "未命名文章",
-                "body": short_text(article.get("description", "")),
+                "body": short_text(article.get("summary") or article.get("description", "")),
                 "url": article.get("url", ""),
                 "time": article.get("published"),
                 "time_label": "来源时间",
@@ -189,6 +222,14 @@ def render_consumer_sections(data, lines):
                 lines.append(item["body"])
             if item["url"]:
                 lines.append(f"来源：{item['url']}")
+            supporting_sources = item.get("supporting_sources") or []
+            if supporting_sources:
+                links = []
+                for source in supporting_sources:
+                    label = source.get("source") or "佐证来源"
+                    url = source.get("url") or ""
+                    links.append(f"{label}：{url}" if url else label)
+                lines.append("佐证：" + "；".join(links))
             lines.append("")
 
 
@@ -244,12 +285,17 @@ def main():
     now = datetime.now().strftime("%Y-%m-%d")
     articles = len(selected_articles(data))
     tweets = len(selected_tweets(data))
+    events = len(data.get("event_groups") or [])
     lines = [
         f"# Consumer Signal 日报 - {now}",
         "",
         f"语言：{cfg.get('language', 'zh')} | 详细度：{cfg.get('granularity', 'summary')}",
         "",
-        f"本次候选：网页文章 {articles} 条，X 信号 {tweets} 条。",
+        (
+            f"本次候选：{events} 个行业事件（来自网页文章 {articles} 条，X 信号 {tweets} 条）。"
+            if data.get("event_groups") is not None
+            else f"本次候选：网页文章 {articles} 条，X 信号 {tweets} 条。"
+        ),
         "",
     ]
     if data.get("errors"):

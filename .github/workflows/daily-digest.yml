@@ -54,6 +54,9 @@ jobs:
       - name: Validate feed uniqueness
         run: python scripts/validate_feeds.py
 
+      - name: Report source health
+        run: python scripts/report_feed_health.py
+
       - name: Generate optional central summaries
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.generate_summaries == 'true' }}
         env:
