@@ -60,10 +60,10 @@
           "id": "2083348319678636328",
           "text": "NEW VIDEO - Galaxy Z Fold 8 Review: Honeymoon's Over https://t.co/ig95BuhHxK https://t.co/b2fRIWpIGg",
           "created_at": "2026-08-01T00:25:20+00:00",
-          "like_count": 2009,
-          "retweet_count": 66,
-          "reply_count": 53,
-          "engagement_score": 2194,
+          "like_count": 2156,
+          "retweet_count": 73,
+          "reply_count": 57,
+          "engagement_score": 2359,
           "url": "https://x.com/MKBHD/status/2083348319678636328"
         }
       ],
@@ -141,30 +141,30 @@
           "id": "2083319270193201477",
           "text": "Apple has just released an update for their \"MagSafe Certification Asst\" app \n\nHere is the new icon (left) compared to the old (right) https://t.co/NXOTcRoS9S",
           "created_at": "2026-07-31T22:29:54+00:00",
-          "like_count": 786,
-          "retweet_count": 14,
+          "like_count": 815,
+          "retweet_count": 15,
           "reply_count": 8,
-          "engagement_score": 822,
+          "engagement_score": 853,
           "url": "https://x.com/aaronp613/status/2083319270193201477"
         },
         {
           "id": "2083325546910343217",
           "text": "Apple has launched Apple Maps Transit features in Chile. \n\nIt went live in the backend this afternoon and confirmed by @AxelDreemurr to be live https://t.co/v6wNyCUoLc",
           "created_at": "2026-07-31T22:54:51+00:00",
-          "like_count": 284,
-          "retweet_count": 20,
+          "like_count": 294,
+          "retweet_count": 21,
           "reply_count": 5,
-          "engagement_score": 329,
+          "engagement_score": 341,
           "url": "https://x.com/aaronp613/status/2083325546910343217"
         },
         {
           "id": "2083191480668066096",
           "text": "Belkin and Marvel teamed up to launch a line of \"Spider-Man: Brand New Day\" accessories and I got to test them out!\n\nEverything worked really well during my testing this week. The 5K MagSafe battery and the 10K BoostCharge with the built-in cable are super practical, and the 67W wall charger easily handles my laptop and phone at the same time. \n\nThey are all definitely coming with me on my upcoming trip to Panama.",
           "created_at": "2026-07-31T14:02:07+00:00",
-          "like_count": 30,
+          "like_count": 31,
           "retweet_count": 1,
           "reply_count": 1,
-          "engagement_score": 33,
+          "engagement_score": 34,
           "url": "https://x.com/aaronp613/status/2083191480668066096"
         }
       ],
@@ -194,6 +194,7 @@
     }
   ],
   "errors": null,
-  "generated_at": "2026-08-01T09:25:32.404972+00:00",
-  "profile": "consumer_electronics"
+  "generated_at": "2026-08-01T10:38:14.414863+00:00",
+  "profile": "consumer_electronics",
+  "attempted_at": "2026-08-01T10:38:14.414863+00:00"
 }

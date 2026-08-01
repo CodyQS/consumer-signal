@@ -1,6 +1,19 @@
 {
   "articles": [
     {
+      "id": "https://www.gsmarena.com/iphone_air_2s_upgrades_detailed_in_a_new_research_note-news-73969.php",
+      "source": "gsmarena",
+      "source_name": "GSMArena News and Reviews",
+      "title": "iPhone Air 2's upgrades detailed in a new research note",
+      "url": "https://www.gsmarena.com/iphone_air_2s_upgrades_detailed_in_a_new_research_note-news-73969.php",
+      "published": "2026-08-01T11:33:02+02:00",
+      "summary": "Investment analyst Jeff Pu has shared a new research note with GF Securities today, and it's all about the upcoming iPhone Air 2. The device is expected to be launched in the first quarter of 2027, so before the end of March.\nAccording to Pu, the iPhone Air 2 will be powered by the A20 Pro chip, just like the iPhone 18 Pro and iPhone 18 Pro Max. The chip will be made using TSMC's 2nm process.\niPhone Air\nThe iPhone Air 2 will also have a smaller dynamic island than the original iPhone Air, and will get a 48MP ultrawide camera to complement its main shooter. The Air 2 will have...",
+      "domain": "consumer_electronics",
+      "region": "global",
+      "evidence_class": "review_feedback",
+      "source_layer": "reviews"
+    },
+    {
       "id": "https://www.gsmarena.com/samsung_galaxy_s26_fe_camera_specs_surface-news-73959.php",
       "source": "gsmarena",
       "source_name": "GSMArena News and Reviews",
@@ -662,35 +675,10 @@
       "region": "global",
       "evidence_class": "industry_reporting",
       "source_layer": "product_rumors"
-    },
-    {
-      "id": "https://news.samsung.com/global/interview-galaxy-unpacked-july-2026-inside-the-engineering-behind-the-latest-galaxy-z-series",
-      "source": "samsung_global_newsroom",
-      "source_name": "Samsung Global Newsroom",
-      "title": "[Interview] [Galaxy Unpacked July 2026] Inside the Engineering Behind the Latest Galaxy Z Series",
-      "url": "https://news.samsung.com/global/interview-galaxy-unpacked-july-2026-inside-the-engineering-behind-the-latest-galaxy-z-series",
-      "published": "2026-07-30T10:41:00+00:00",
-      "summary": "On July 22 at Galaxy Unpacked July 2026, Samsung Electronics unveiled Galaxy Z Fold8 Ultra, Galaxy Z Fold8 and Galaxy Z Flip8, marking the eighth generation of the Galaxy Z series. Across seven generations, Samsung has helped define the foldable category through advances in display technology, hinge engineering and materials innovation — all driven by […]",
-      "domain": "consumer_electronics",
-      "region": "global",
-      "evidence_class": "primary_disclosure",
-      "source_layer": "official_brand"
-    },
-    {
-      "id": "https://news.samsung.com/global/samsung-electronics-announces-second-quarter-2026-results",
-      "source": "samsung_global_newsroom",
-      "source_name": "Samsung Global Newsroom",
-      "title": "Samsung Electronics Announces Second Quarter 2026 Results",
-      "url": "https://news.samsung.com/global/samsung-electronics-announces-second-quarter-2026-results",
-      "published": "2026-07-30T08:56:00+00:00",
-      "summary": "Samsung Electronics today reported financial results for the second quarter ended June 30, 2026. The Company posted KRW 171.5 trillion in consolidated revenue, another all-time quarterly high, representing a quarter-on-quarter (QoQ) increase of 28%. Operating profit also reached another all-time high, increasing to KRW 89.5 trillion. Earnings per share for both common and preferred shares […]",
-      "domain": "consumer_electronics",
-      "region": "global",
-      "evidence_class": "primary_disclosure",
-      "source_layer": "official_brand"
     }
   ],
   "errors": null,
-  "generated_at": "2026-08-01T08:41:22.719638+00:00",
-  "profile": "consumer_electronics"
+  "generated_at": "2026-08-01T10:38:14.414863+00:00",
+  "profile": "consumer_electronics",
+  "attempted_at": "2026-08-01T10:38:14.414863+00:00"
 }
