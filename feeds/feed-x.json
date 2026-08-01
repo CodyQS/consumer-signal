@@ -1,8 +1,199 @@
 {
-  "x": [],
-  "errors": [
-    "TWITTER_COOKIES not set"
+  "x": [
+    {
+      "handle": "DSCCRoss",
+      "name": "Ross Young / DSCC",
+      "domain": "consumer_electronics",
+      "tier": "supply_chain",
+      "tweets": [],
+      "region": "global",
+      "evidence_class": "early_signal",
+      "source_layer": "supply_chain_reporting"
+    },
+    {
+      "handle": "benthompson",
+      "name": "Ben Thompson / Stratechery",
+      "domain": "consumer_electronics",
+      "tier": "analyst",
+      "tweets": [],
+      "region": "global",
+      "evidence_class": "industry_reporting",
+      "source_layer": "platform_business"
+    },
+    {
+      "handle": "mims",
+      "name": "Christopher Mims / WSJ",
+      "domain": "consumer_electronics",
+      "tier": "reporter",
+      "tweets": [],
+      "region": "global",
+      "evidence_class": "industry_reporting",
+      "source_layer": "market_commentary"
+    },
+    {
+      "handle": "CaseyNewton",
+      "name": "Casey Newton / Platformer",
+      "domain": "consumer_electronics",
+      "tier": "analyst",
+      "tweets": [],
+      "region": "global",
+      "evidence_class": "industry_reporting",
+      "source_layer": "platform_business"
+    },
+    {
+      "handle": "verge",
+      "name": "The Verge",
+      "domain": "consumer_electronics",
+      "tier": "media",
+      "tweets": [],
+      "region": "global",
+      "evidence_class": "review_feedback",
+      "source_layer": "reviews"
+    },
+    {
+      "handle": "MKBHD",
+      "name": "Marques Brownlee / MKBHD",
+      "domain": "consumer_electronics",
+      "tier": "reviewer",
+      "tweets": [
+        {
+          "id": "2083348319678636328",
+          "text": "NEW VIDEO - Galaxy Z Fold 8 Review: Honeymoon's Over https://t.co/ig95BuhHxK https://t.co/b2fRIWpIGg",
+          "created_at": "2026-08-01T00:25:20+00:00",
+          "like_count": 2009,
+          "retweet_count": 66,
+          "reply_count": 53,
+          "engagement_score": 2194,
+          "url": "https://x.com/MKBHD/status/2083348319678636328"
+        }
+      ],
+      "region": "global",
+      "evidence_class": "review_feedback",
+      "source_layer": "creator_feedback"
+    },
+    {
+      "handle": "markgurman",
+      "name": "Mark Gurman / Bloomberg Power On",
+      "domain": "consumer_electronics",
+      "tier": "reporter",
+      "tweets": [],
+      "region": "global",
+      "evidence_class": "early_signal",
+      "source_layer": "product_rumors"
+    },
+    {
+      "handle": "evleaks",
+      "name": "Evan Blass / evleaks",
+      "domain": "consumer_electronics",
+      "tier": "leaker",
+      "tweets": [],
+      "region": "global",
+      "evidence_class": "early_signal",
+      "source_layer": "product_rumors"
+    },
+    {
+      "handle": "jon_prosser",
+      "name": "Jon Prosser / Front Page Tech",
+      "domain": "consumer_electronics",
+      "tier": "leaker",
+      "tweets": [],
+      "region": "global",
+      "evidence_class": "early_signal",
+      "source_layer": "product_rumors"
+    },
+    {
+      "handle": "VNchocoTaco",
+      "name": "ShrimpApplePro",
+      "domain": "consumer_electronics",
+      "tier": "leaker",
+      "tweets": [],
+      "region": "global",
+      "evidence_class": "early_signal",
+      "source_layer": "product_rumors"
+    },
+    {
+      "handle": "PatrickKennedyIT",
+      "name": "Patrick Kennedy IT",
+      "domain": "consumer_electronics",
+      "tier": "analyst",
+      "tweets": [],
+      "region": "global",
+      "evidence_class": "early_signal",
+      "source_layer": "product_rumors"
+    },
+    {
+      "handle": "frontpagetech",
+      "name": "Front Page Tech",
+      "domain": "consumer_electronics",
+      "tier": "leaker",
+      "tweets": [],
+      "region": "global",
+      "evidence_class": "early_signal",
+      "source_layer": "product_rumors"
+    },
+    {
+      "handle": "aaronp613",
+      "name": "Aaron p613",
+      "domain": "consumer_electronics",
+      "tier": "leaker",
+      "tweets": [
+        {
+          "id": "2083319270193201477",
+          "text": "Apple has just released an update for their \"MagSafe Certification Asst\" app \n\nHere is the new icon (left) compared to the old (right) https://t.co/NXOTcRoS9S",
+          "created_at": "2026-07-31T22:29:54+00:00",
+          "like_count": 786,
+          "retweet_count": 14,
+          "reply_count": 8,
+          "engagement_score": 822,
+          "url": "https://x.com/aaronp613/status/2083319270193201477"
+        },
+        {
+          "id": "2083325546910343217",
+          "text": "Apple has launched Apple Maps Transit features in Chile. \n\nIt went live in the backend this afternoon and confirmed by @AxelDreemurr to be live https://t.co/v6wNyCUoLc",
+          "created_at": "2026-07-31T22:54:51+00:00",
+          "like_count": 284,
+          "retweet_count": 20,
+          "reply_count": 5,
+          "engagement_score": 329,
+          "url": "https://x.com/aaronp613/status/2083325546910343217"
+        },
+        {
+          "id": "2083191480668066096",
+          "text": "Belkin and Marvel teamed up to launch a line of \"Spider-Man: Brand New Day\" accessories and I got to test them out!\n\nEverything worked really well during my testing this week. The 5K MagSafe battery and the 10K BoostCharge with the built-in cable are super practical, and the 67W wall charger easily handles my laptop and phone at the same time. \n\nThey are all definitely coming with me on my upcoming trip to Panama.",
+          "created_at": "2026-07-31T14:02:07+00:00",
+          "like_count": 30,
+          "retweet_count": 1,
+          "reply_count": 1,
+          "engagement_score": 33,
+          "url": "https://x.com/aaronp613/status/2083191480668066096"
+        }
+      ],
+      "region": "global",
+      "evidence_class": "early_signal",
+      "source_layer": "product_rumors"
+    },
+    {
+      "handle": "reneritchie",
+      "name": "Rene Ritchie",
+      "domain": "consumer_electronics",
+      "tier": "reviewer",
+      "tweets": [],
+      "region": "global",
+      "evidence_class": "review_feedback",
+      "source_layer": "creator_feedback"
+    },
+    {
+      "handle": "bindureddy",
+      "name": "Bindu Reddy",
+      "domain": "consumer_electronics",
+      "tier": "analyst",
+      "tweets": [],
+      "region": "global",
+      "evidence_class": "industry_reporting",
+      "source_layer": "ai_terminal"
+    }
   ],
-  "generated_at": "2026-08-01T08:41:22.719638+00:00",
+  "errors": null,
+  "generated_at": "2026-08-01T09:25:32.404972+00:00",
   "profile": "consumer_electronics"
 }
